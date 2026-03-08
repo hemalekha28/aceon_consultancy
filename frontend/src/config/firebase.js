@@ -3,14 +3,16 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // Your web app's Firebase configuration
+// IMPORTANT: Use environment variables instead of hardcoding
+// See frontend/.env.example for required variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDb83iT49XzSyzP2I92BafxtQ7mIrrlO3A",
-  authDomain: "aceon-mattress.firebaseapp.com",
-  projectId: "aceon-mattress",
-  storageBucket: "aceon-mattress.firebasestorage.app",
-  messagingSenderId: "747012011997",
-  appId: "1:747012011997:web:0e98250a5827e75869e834",
-  measurementId: "G-GW7NMTGH6X"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
