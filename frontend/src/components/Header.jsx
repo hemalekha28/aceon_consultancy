@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
 import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo } from 'react-icons/fi';
