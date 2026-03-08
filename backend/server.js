@@ -37,7 +37,6 @@ const analyticsRoutes = require('./routes/analytics');
 const chatbotRoutes = require('./routes/chatbot');
 const reviewRoutes = require('./routes/reviews');
 const paymentRoutes = require('./routes/payment.routes');
-const mlAnalyticsRoutes = require('./routes/mlAnalytics');
 const errorHandler = require('./middlewares/error');
 
 // Routes
@@ -47,7 +46,6 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/cart', cartRoutes);
-app.use('/api/ml-insights', mlAnalyticsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/reviews', reviewRoutes);

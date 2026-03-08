@@ -7,6 +7,222 @@ const { protect, admin } = require('../middlewares/auth');
 
 const router = express.Router();
 
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /api/analytics/sales-dashboard
+   Returns all real data needed for the SalesAnalytics admin page:
+     - daily / weekly / monthly revenue + orders
+     - best-selling products (aggregated from orders)
+     - low-stock products (stock < 10)
+     - sales by category
+     - summary KPIs (total revenue, total orders, AOV, total products)
+   ───────────────────────────────────────────────────────────────────────── */
+router.get('/sales-dashboard', protect, admin, async (req, res) => {
+  try {
+    const now = new Date();
+
+    /* ── 1. DAILY  (last 7 days, grouped by day) ── */
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const dailyAgg = await Order.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo }, status: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: {
+            y: { $year: '$createdAt' },
+            m: { $month: '$createdAt' },
+            d: { $dayOfMonth: '$createdAt' }
+          },
+          revenue: { $sum: '$total' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.y': 1, '_id.m': 1, '_id.d': 1 } }
+    ]);
+
+    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Build a map of date string -> data
+    const dailyMap = {};
+    dailyAgg.forEach(x => {
+      const key = `${x._id.y}-${String(x._id.m).padStart(2, '0')}-${String(x._id.d).padStart(2, '0')}`;
+      dailyMap[key] = { revenue: x.revenue, orders: x.orders };
+    });
+    const dailyData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dailyData.push({
+        label: DAY_NAMES[d.getDay()],
+        revenue: dailyMap[key]?.revenue || 0,
+        orders: dailyMap[key]?.orders || 0
+      });
+    }
+
+    /* ── 2. WEEKLY  (last 8 weeks, grouped by ISO week) ── */
+    const eightWeeksAgo = new Date(now);
+    eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 55);
+    eightWeeksAgo.setHours(0, 0, 0, 0);
+
+    const weeklyAgg = await Order.aggregate([
+      { $match: { createdAt: { $gte: eightWeeksAgo }, status: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: {
+            y: { $isoWeekYear: '$createdAt' },
+            w: { $isoWeek: '$createdAt' }
+          },
+          revenue: { $sum: '$total' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.y': 1, '_id.w': 1 } }
+    ]);
+    const weeklyData = weeklyAgg.map((x, idx) => ({
+      label: `Week ${idx + 1}`,
+      revenue: x.revenue,
+      orders: x.orders
+    }));
+
+    /* ── 3. MONTHLY  (current year, all months) ── */
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = now.getFullYear();
+
+    const monthlyAgg = await Order.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
+          revenue: { $sum: '$total' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.y': 1, '_id.m': 1 } }
+    ]);
+    // Keep only current year; if none, show all years
+    let monthlyFiltered = monthlyAgg.filter(x => x._id.y === currentYear);
+    if (monthlyFiltered.length === 0) monthlyFiltered = monthlyAgg;
+    const monthlyData = monthlyFiltered.map(x => ({
+      label: MONTH_NAMES[x._id.m - 1],
+      revenue: x.revenue,
+      orders: x.orders
+    }));
+
+    /* ── 4. BEST-SELLING PRODUCTS  (aggregated from orders) ── */
+    const bestSellersAgg = await Order.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      { $unwind: '$products' },
+      {
+        $group: {
+          _id: '$products.product',
+          name: { $first: '$products.name' },
+          unitsSold: { $sum: '$products.quantity' },
+          revenue: { $sum: { $multiply: ['$products.price', '$products.quantity'] } }
+        }
+      },
+      { $sort: { unitsSold: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } }
+    ]);
+
+    const bestSellers = bestSellersAgg.map((p, idx) => ({
+      id: p._id,
+      name: p.name || p.product?.name || 'Unknown',
+      sku: p.product?.sku || `SKU-${String(p._id).slice(-6).toUpperCase()}`,
+      category: p.product?.category || 'other',
+      unitsSold: p.unitsSold,
+      revenue: p.revenue
+    }));
+
+    /* ── 5. LOW STOCK PRODUCTS  (stock < 10) ── */
+    const lowStockProducts = await Product.find({ stock: { $lt: 10 } })
+      .select('_id name stock category')
+      .sort({ stock: 1 })
+      .limit(20);
+
+    const stockItems = lowStockProducts.map(p => ({
+      id: p._id,
+      name: p.name,
+      sku: `${p.category.slice(0, 3).toUpperCase()}-${String(p._id).slice(-4).toUpperCase()}`,
+      stock: p.stock,
+      category: p.category
+    }));
+
+    /* ── 6. SALES BY CATEGORY  (from orders) ── */
+    const categoryAgg = await Order.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      { $unwind: '$products' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'products.product',
+          foreignField: '_id',
+          as: 'prod'
+        }
+      },
+      { $unwind: { path: '$prod', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: { $ifNull: ['$prod.category', 'Other'] },
+          units: { $sum: '$products.quantity' },
+          revenue: { $sum: { $multiply: ['$products.price', '$products.quantity'] } }
+        }
+      },
+      { $sort: { revenue: -1 } }
+    ]);
+
+    const categoryData = categoryAgg.map(c => ({
+      name: c._id,
+      units: c.units,
+      revenue: c.revenue
+    }));
+
+    /* ── 7. SUMMARY KPIs ── */
+    const totalOrdersCount = await Order.countDocuments({ status: { $ne: 'cancelled' } });
+    const totalRevenueAgg = await Order.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      { $group: { _id: null, total: { $sum: '$total' } } }
+    ]);
+    const totalRevenue = totalRevenueAgg[0]?.total || 0;
+    const aov = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+    const totalProducts = await Product.countDocuments();
+
+    res.json({
+      success: true,
+      data: {
+        dailyData,
+        weeklyData,
+        monthlyData,
+        bestSellers,
+        lowStockProducts: stockItems,
+        categoryData,
+        kpis: {
+          totalRevenue,
+          totalOrders: totalOrdersCount,
+          aov,
+          totalProducts
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Sales dashboard analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching sales dashboard data',
+      error: error.message
+    });
+  }
+});
+
 // GET /api/analytics
 router.get('/', protect, admin, async (req, res) => {
   try {

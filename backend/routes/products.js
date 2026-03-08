@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
-  query('category').optional().isIn(['electronics', 'clothing', 'books', 'home', 'sports', 'other']).withMessage('Invalid category')
+  query('category').optional().isIn(['latex', 'coir', 'memory-foam', 'softy-foam', 'spring']).withMessage('Invalid category')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -95,7 +95,7 @@ router.post('/', protect, admin, [
   body('description').trim().notEmpty().withMessage('Product description is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('image').notEmpty().withMessage('Product image is required'),
-  body('category').isIn(['electronics', 'clothing', 'books', 'home', 'sports', 'other']).withMessage('Invalid category'),
+  body('category').isIn(['latex', 'coir', 'memory-foam', 'softy-foam', 'spring']).withMessage('Invalid category'),
   body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer')
 ], async (req, res) => {
   try {
@@ -108,7 +108,8 @@ router.post('/', protect, admin, [
 
     res.status(201).json({ success: true, data: { product } });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating product' });
+    console.error('Error creating product:', error);
+    res.status(500).json({ success: false, message: 'Error creating product: ' + error.message });
   }
 });
 
@@ -120,7 +121,7 @@ router.put('/:id', protect, admin, [
   body('description').optional().trim().notEmpty().withMessage('Product description cannot be empty'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('image').optional().notEmpty().withMessage('Product image cannot be empty'),
-  body('category').optional().isIn(['electronics', 'clothing', 'books', 'home', 'sports', 'other']).withMessage('Invalid category'),
+  body('category').optional().isIn(['latex', 'coir', 'memory-foam', 'softy-foam', 'spring']).withMessage('Invalid category'),
   body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer')
 ], async (req, res) => {
   try {
@@ -140,7 +141,8 @@ router.put('/:id', protect, admin, [
 
     res.json({ success: true, data: { product } });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error updating product' });
+    console.error('Error updating product:', error);
+    res.status(500).json({ success: false, message: 'Error updating product: ' + error.message });
   }
 });
 // Add this to your backend routes

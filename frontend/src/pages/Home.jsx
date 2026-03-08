@@ -37,24 +37,24 @@ const Home = () => {
 
   const categories = [
     {
-      name: 'Memory Foam',
-      image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=600&q=80',
-      link: '/products?category=memory-foam'
+      name: 'Latex',
+      image: '/uploads/bed2.jpeg',
+      link: '/products?category=latex'
     },
     {
-      name: 'Hybrid Mattresses',
-      image: 'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=600&q=80',
-      link: '/products?category=hybrid'
+      name: 'Coir',
+      image: '/uploads/bed4.jpeg',
+      link: '/products?category=coir'
     },
     {
-      name: 'Orthopedic',
-      image: 'https://images.unsplash.com/photo-1622372738946-629715071d3e?auto=format&fit=crop&w=600&q=80',
-      link: '/products?category=orthopedic'
+      name: 'Softy Foam',
+      image: '/uploads/bed6.jpeg',
+      link: '/products?category=softy-foam'
     },
     {
-      name: 'Luxury Bedding',
-      image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80',
-      link: '/products?category=bedding'
+      name: 'Spring',
+      image: '/uploads/bed7.jpeg',
+      link: '/products?category=spring'
     }
   ];
 
@@ -65,29 +65,35 @@ const Home = () => {
         slides={[
           {
             image:
-              'https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1600&auto=format&fit=crop',
-            badge: 'New Collection',
-            title: 'Experience The Ultimate Comfort',
-            subtitle: 'Premium handcrafted mattresses designed for your best night\'s sleep.',
-            primaryCta: { href: '/products', label: 'Shop Collection' },
-            secondaryCta: { href: '/products?category=hybrid', label: 'Explore Hybrids' },
+              'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=1600',
+            badge: 'Sleep Profile Quiz',
+            title: 'Find Your Perfect Mattress in 60 Seconds',
+            subtitle: 'Answer 6 quick questions and get a personalized recommendation based on your body type and sleep habits.',
+            primaryCta: { href: '/quiz', label: 'Start Sleep Quiz' },
+            secondaryCta: { href: '/products', label: 'Browse All' },
           },
           {
-            image:
-              'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1600&auto=format&fit=crop',
-            badge: 'Limited Offer',
+            image: '/uploads/bed3.jpeg',
+            badge: 'Spring Mattresses',
+            title: 'Experience The Ultimate Comfort',
+            subtitle: 'Advanced multi-layer technology for a perfect night\'s sleep.',
+            primaryCta: { href: '/products', label: 'Shop Spring' },
+            secondaryCta: { href: '/products?category=spring', label: 'Learn More' },
+          },
+          {
+            image: '/uploads/bed5.jpeg',
+            badge: 'Memory Foam',
             title: 'Wake Up Refreshed Every Morning',
-            subtitle: 'Orthopedic support meets cloud-like softness in our memory foam series.',
-            primaryCta: { href: '/products?category=memory-foam', label: 'Shop Memory Foam' },
+            subtitle: 'Contouring support meets cloud-like softness in our memory foam series.',
+            primaryCta: { href: '/products?category=memory-foam', label: 'Shop Series' },
             secondaryCta: { href: '/products', label: 'View All' },
           },
           {
-            image:
-              'https://images.unsplash.com/photo-1622372738946-629715071d3e?q=80&w=1600&auto=format&fit=crop',
-            badge: 'Editor’s Choice',
-            title: 'Luxury Sleeping Essentials',
-            subtitle: 'Elevate your bedroom with our curated collection of luxury mattresses and bedding.',
-            primaryCta: { href: '/products?category=orthopedic', label: 'Shop Orthopedic' },
+            image: '/uploads/bed11.jpeg',
+            badge: 'Natural Latex',
+            title: 'Designed for Better Back Health',
+            subtitle: 'Responsive support for proper spinal alignment.',
+            primaryCta: { href: '/products?category=latex', label: 'Shop Latex' },
             secondaryCta: { href: '/products?sortBy=rating', label: 'Best Rated' },
           },
         ]}

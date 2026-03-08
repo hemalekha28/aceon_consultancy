@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Product category is required'],
-    enum: ['memory-foam', 'hybrid', 'orthopedic', 'bedding', 'accessories', 'other']
+    enum: ['latex', 'coir', 'memory-foam', 'softy-foam', 'spring']
   },
   stock: {
     type: Number,

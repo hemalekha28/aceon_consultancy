@@ -19,12 +19,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
 import OrderManagement from './pages/OrderManagement';
 import UserManagement from './pages/UserManagement';
+import SalesAnalytics from './pages/SalesAnalytics';
 import Cart from './components/Cart';
 import Wishlist from './pages/WishList';
 import ProductListing from './pages/ProductListing';
 import ComparePage from './pages/ComparePage';
 import Chatbot from './components/Chatbot';
 import SimpleChatbot from './components/SimpleChatbot';
+import SleepQuiz from './pages/SleepQuiz';
 
 // Role selection component
 const RoleSelector = ({ onRoleSelect }) => {
@@ -32,8 +34,8 @@ const RoleSelector = ({ onRoleSelect }) => {
     <div className="role-selector">
       <div className="container">
         <div className="hero">
-          <h1>Welcome to LuxeSleep</h1>
-          <p>Premium handcrafted mattresses for your best night's sleep.</p>
+          <h1>Welcome to ACEON</h1>
+          <p>Experience True Comfort with ACEON. Premium handcrafted mattresses for your best night's sleep.</p>
           <div className="flex justify-center gap-4 mt-4">
             <button
               className="btn btn-primary btn-lg"
@@ -99,6 +101,7 @@ const AdminLayout = ({ children }) => {
             <li><Link to="/admin/products">Products</Link></li>
             <li><Link to="/admin/orders">Orders</Link></li>
             <li><Link to="/admin/users">Users</Link></li>
+            <li><Link to="/admin/analytics">Sales Analytics</Link></li>
           </ul>
         </nav>
         <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -194,6 +197,7 @@ function AppContent({ selectedRole }) {
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/quiz" element={<SleepQuiz />} />
             <Route
               path="/checkout"
               element={
@@ -262,6 +266,16 @@ function AppContent({ selectedRole }) {
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <UserManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <SalesAnalytics />
                   </AdminLayout>
                 </ProtectedRoute>
               }
