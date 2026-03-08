@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/authContext';
+import { AuthProvider } from './context/authContext';
+import { useAuth } from './context/useAuth';
 import { CartProvider, useCart } from './context/cartContext';
 import { NotificationProvider, useNotification } from './context/notificationContext';
 import { CompareProvider, useCompare } from './context/compareContext';
