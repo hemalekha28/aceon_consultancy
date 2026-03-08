@@ -183,24 +183,27 @@ const SleepQuiz = () => {
 
     const renderQuestion1 = () => (
         <div className="animate-slide-in">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Your Body Weight?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Critical for calculating support core tension. Choose your approximate range.</p>
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">What's your weight?</h2>
+            <p className="text-slate-500 mb-12 text-lg font-medium">This helps us suggest the right support level</p>
 
             <div className="grid grid-cols-1 gap-5">
                 {[
-                    { id: 'light', label: 'Cloud Lightweight', range: 'Under 130 lbs' },
-                    { id: 'avg-light', label: 'Standard Average', range: '130 - 180 lbs' },
-                    { id: 'avg-heavy', label: 'Empowered Build', range: '180 - 230 lbs' },
-                    { id: 'heavy', label: 'Substantial Support', range: 'Over 230 lbs' }
+                    { id: 'light', icon: '🪶', label: 'Light', range: 'Under 60 kg' },
+                    { id: 'avg-light', icon: '⚖️', label: 'Average', range: '60 - 80 kg' },
+                    { id: 'avg-heavy', icon: '💪', label: 'Heavy', range: '80 - 105 kg' },
+                    { id: 'heavy', icon: '🏋️', label: 'Very Heavy', range: 'Over 105 kg' }
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('weight', opt.id)}
                         className="quiz-option-btn group"
                     >
-                        <div>
-                            <span className="block text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.range}</span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-4xl">{opt.icon}</span>
+                            <div>
+                                <span className="block text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.range}</span>
+                            </div>
                         </div>
                         <div className="w-8 h-8 rounded-full border-2 border-slate-200 group-hover:border-indigo-600 flex items-center justify-center transition-all bg-slate-50">
                             <div className="w-4 h-4 rounded-full bg-indigo-600 scale-0 group-hover:scale-100 transition-transform" />
@@ -214,44 +217,47 @@ const SleepQuiz = () => {
     const renderQuestion2 = () => (
         <div className="animate-slide-in">
             <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">How tall are you?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Height and weight determine optimal posture alignment.</p>
+            <p className="text-slate-500 mb-12 text-lg font-medium">Height helps match the right mattress size</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {[
-                    { id: 'short', label: "Under 5'4\"" },
-                    { id: 'avg-short', label: "5'4\" - 5'8\"" },
-                    { id: 'avg-tall', label: "5'9\" - 6'1\"" },
-                    { id: 'tall', label: "Over 6'1\"" },
-                    { id: 'skip', label: 'Prefer not to say' },
+                    { id: 'short', icon: '📏', label: 'Short', range: 'Under 163 cm (5\'4\")' },
+                    { id: 'avg-short', icon: '📏', label: 'Medium', range: '163-173 cm (5\'4"-5\'8\")' },
+                    { id: 'avg-tall', icon: '📏', label: 'Tall', range: '173-185 cm (5\'8"-6\'1\")' },
+                    { id: 'tall', icon: '📏', label: 'Very Tall', range: 'Over 185 cm (6\'1\"+)' },
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('height', opt.id)}
-                        className="quiz-option-btn group py-8"
+                        className="quiz-option-btn group py-8 flex items-center gap-4"
                     >
-                        <span className="font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
-                        <div className="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:border-indigo-600 transition-colors" />
+                        <span className="text-4xl">{opt.icon}</span>
+                        <div className="text-left">
+                            <span className="block font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.range}</span>
+                        </div>
+                        <div className="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:border-indigo-600 transition-colors ml-auto" />
                     </button>
                 ))}
             </div>
         </div>
     );
-
-    const renderQuestion3 = () => (
-        <div className="animate-slide-in">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Primary Posture?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Your posture determines the pressure relief zones required.</p>
+How do you sleep?</h2>
+            <p className="text-slate-500 mb-12 text-lg font-medium">Choose your most common sleeping position</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                    { id: 'side', icon: '😴', label: 'Side Sleeper', subtext: 'Needs hip/shoulder relief' },
-                    { id: 'back', icon: '😌', label: 'Back Sleeper', subtext: 'Lumbar support focus' },
-                    { id: 'stomach', icon: '😪', label: 'Stomach Sleeper', subtext: 'Firm core alignment' },
-                    { id: 'combo', icon: '🔄', label: 'Toss & Turn', subtext: 'Dynamic responsiveness' },
+                    { id: 'side', icon: '😴', label: 'Side', subtext: 'Hip & shoulder support' },
+                    { id: 'back', icon: '😌', label: 'Back', subtext: 'Lower back support' },
+                    { id: 'stomach', icon: '😪', label: 'Stomach', subtext: 'Firm support' },
+                    { id: 'combo', icon: '🔄', label: 'Mix of All', subtext: 'Change positions' },
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('position', opt.id)}
+                        className="quiz-option-btn group flex-col items-center gap-4 p-10 text-center"
+                    >
+                        <span className="text-6xl group-hover:scale-125 transition-transformosition', opt.id)}
                         className="quiz-option-btn group flex-col items-start gap-4 p-10"
                     >
                         <span className="text-5xl mb-2">{opt.icon}</span>
@@ -264,28 +270,26 @@ const SleepQuiz = () => {
             </div>
         </div>
     );
-
-    const renderQuestion4 = () => (
-        <div className="animate-slide-in">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Back Pain Diagnostic?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Do you experience chronic tension or localized discomfort?</p>
+Do you have back pain?</h2>
+            <p className="text-slate-500 mb-12 text-lg font-medium">This helps us find a mattress with the right support</p>
 
             <div className="flex flex-col gap-5 mb-8">
                 {[
-                    { id: 'frequently', label: 'Chronic Tension', sub: 'Pain occurs 4+ times per week' },
-                    { id: 'occasionally', label: 'Occasional Tightness', sub: 'Varies with lifestyle/stress' },
-                    { id: 'rarely', label: 'Peak Comfort', sub: 'Rarely wake up with discomfort' },
+                    { id: 'frequently', icon: '😰', label: 'Yes, often', sub: 'Pain most days of the week' },
+                    { id: 'occasionally', icon: '😐', label: 'Sometimes', sub: 'Pain comes and goes' },
+                    { id: 'rarely', icon: '😊', label: 'No, rarely', sub: 'I sleep comfortably' },
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('backPain', opt.id)}
-                        className={`quiz-option-btn p-8 ${answers.backPain === opt.id ? 'border-indigo-600 bg-indigo-50/30 shadow-lg' : ''}`}
+                        className={`quiz-option-btn p-8 flex items-center gap-4 ${answers.backPain === opt.id ? 'border-indigo-600 bg-indigo-50/30 shadow-lg' : ''}`}
                     >
-                        <div className="text-left">
+                        <span className="text-4xl">{opt.icon}</span>
+                        <div className="text-left flex-1">
                             <span className={`block text-xl font-black mb-1 ${answers.backPain === opt.id ? 'text-indigo-600' : 'text-slate-900'}`}>{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.sub}</span>
                         </div>
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${answers.backPain === opt.id ? 'border-indigo-600 bg-white' : 'border-slate-100'}`}>
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${answers.backPain === opt.id ? 'border-indigo-600 bg-white' : 'border-slate-100'}`}>
                             {answers.backPain === opt.id && <div className="w-4 h-4 rounded-full bg-indigo-600" />}
                         </div>
                     </button>
@@ -294,7 +298,7 @@ const SleepQuiz = () => {
 
             {(answers.backPain === 'frequently' || answers.backPain === 'occasionally') && (
                 <div className="mt-8 p-10 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
-                    <p className="font-black text-[11px] text-slate-400 uppercase tracking-widest mb-6">Target Pain Areas:</p>
+                    <p className="font-black text-[11px] text-slate-400 uppercase tracking-widest mb-6">Where do you feel pain?</p>
                     <div className="grid grid-cols-2 gap-6">
                         {['Lower back', 'Upper back', 'Hips', 'Shoulders'].map(area => (
                             <label key={area} className="flex items-center gap-4 cursor-pointer group">
@@ -313,6 +317,9 @@ const SleepQuiz = () => {
                     </div>
                     <button
                         onClick={nextStep}
+                        className="mt-10 w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-[2rem] font-black hover:shadow-lg transition-all shadow-xl shadow-slate-200"
+                    >
+                        Continue
                         className="mt-10 w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
                     >
                         Secure Calibration →
@@ -323,24 +330,24 @@ const SleepQuiz = () => {
     );
 
     const renderQuestion5 = () => (
-        <div className="animate-slide-in">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Thermal Profile?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Body temperature regulation is essential for uninterrupted REM sleep.</p>
+        <div className="animate-slide-in">Do you sleep hot or cold?</h2>
+            <p className="text-slate-500 mb-12 text-lg font-medium">This affects the mattress cooling technology we recommend</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {[
-                    { id: 'hot', icon: '🔥', label: 'Hyper-Thermal', sub: 'Always sleep hot' },
-                    { id: 'warm', icon: '🌡️', label: 'Elevated Temp', sub: 'Sometimes warm' },
-                    { id: 'cool', icon: '❄️', label: 'Optimized Cool', sub: 'Standard temp' },
-                    { id: 'cold', icon: '🧊', label: "Hypo-Thermal", sub: 'Always cold' },
+                    { id: 'hot', icon: '🔥', label: 'Sleep Hot', sub: 'Always too warm' },
+                    { id: 'warm', icon: '🌡️', label: 'Warm Sometimes', sub: 'Occasionally warm' },
+                    { id: 'cool', icon: '❄️', label: 'Sleep Cool', sub: 'Comfortable temp' },
+                    { id: 'cold', icon: '🧊', label: 'Sleep Cold', sub: 'Always too cold' },
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('temperature', opt.id)}
                         className="quiz-option-btn group p-10 flex-col items-center gap-4 text-center"
                     >
-                        <span className="text-5xl mb-2 group-hover:scale-110 transition-transform">{opt.icon}</span>
+                        <span className="text-6xl mb-2 group-hover:scale-125 transition-transform">{opt.icon}</span>
                         <div>
+                            <span className="block font-black text-xl text-slate-800 group-hover:text-indigo-600 transition-colors
                             <span className="block font-black text-xl text-slate-800 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.sub}</span>
                         </div>
@@ -351,23 +358,24 @@ const SleepQuiz = () => {
     );
 
     const renderQuestion6 = () => (
-        <div className="animate-slide-in">
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Investment Range?</h2>
-            <p className="text-slate-500 mb-12 text-lg font-medium">Quality sleep is an investment in your 10-year health horizon.</p>
+        <div className="animate-slide-in">What's your budget?</h2>
+            <p className="text-slate-500 mb-12 text-lg font-medium">Choose a price range that works for you</p>
 
             <div className="flex flex-col gap-5">
                 {[
-                    { id: 'budget', label: 'Essential Selection', price: 'Under $500' },
-                    { id: 'mid', label: 'Performance Core', price: '$500 - $1,000' },
-                    { id: 'premium', label: 'Priority Luxury', price: '$1,000 - $2,000' },
-                    { id: 'luxury', label: 'Elite Bespoke', price: '$2,000+' },
-                    { id: 'all', label: 'Show Entire Collection', price: 'All price points' },
+                    { id: 'budget', icon: '💵', label: 'Budget-Friendly', price: '< ₹25,000' },
+                    { id: 'mid', icon: '💰', label: 'Mid-Range', price: '₹25,000 - ₹50,000' },
+                    { id: 'premium', icon: '💎', label: 'Premium', price: '₹50,000 - ₹1,00,000' },
+                    { id: 'luxury', icon: '👑', label: 'Luxury', price: '> ₹1,00,000' },
+                    { id: 'all', icon: '📋', label: 'Show All', price: 'All prices' },
                 ].map((opt) => (
                     <button
                         key={opt.id}
                         onClick={() => handleAnswer('budget', opt.id)}
-                        className="quiz-option-btn group p-8"
+                        className="quiz-option-btn group p-8 flex items-center gap-4"
                     >
+                        <span className="text-4xl">{opt.icon}</span>
+                        <div className="flex flex-col text-left flex-1
                         <div className="flex flex-col">
                             <span className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.price}</span>
@@ -386,18 +394,18 @@ const SleepQuiz = () => {
         return (
             <div className="animate-fade-in results-premium">
                 <div className="text-center mb-16">
-                    <div className="badge-exclusive mx-auto mb-6">Precision Selection</div>
-                    <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">Your peak sleep match is ready.</h1>
-                    <p className="text-slate-500 font-medium text-lg">Based on your unique sleep profile and biometric analysis.</p>
+                    <div className="badge-exclusive mx-auto mb-6">Your Best Match</div>
+                    <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">We found the perfect mattress for you</h1>
+                    <p className="text-slate-500 font-medium text-lg">Based on your sleep profile and comfort needs.</p>
                 </div>
 
                 {/* Primary Recommendation */}
                 <div className="max-w-4xl mx-auto bg-white rounded-[2rem] overflow-hidden shadow-[0_50px_100px_rgba(74,144,226,0.08)] border border-slate-100 mb-24 hover:translate-y-[-10px] transition-all duration-700 group">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-3 px-8 flex justify-between items-center text-white">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">🏆 PERFECT MATCH FOR YOU</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">🏆 Your Best Pick</span>
                         <div className="flex items-center gap-2 bg-white/20 px-4 py-1.5 rounded-full text-xs font-black backdrop-blur-md">
                             <FiTarget size={14} />
-                            {recommendation.matchScore.toFixed(0)}% PRECISION
+                            {recommendation.matchScore.toFixed(0)}% Match
                         </div>
                     </div>
 
@@ -418,7 +426,7 @@ const SleepQuiz = () => {
                             <div className="mb-8">
                                 <div className="flex justify-between items-end mb-2">
                                     <span className="text-xs font-black text-blue-500 uppercase tracking-widest">{recommendation.matchScore.toFixed(0)}% Match</span>
-                                    <span className="text-[10px] font-bold text-slate-400">OPTIMIZED FIT</span>
+                                    <span className="text-[10px] font-bold text-slate-400">Great Fit</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full" style={{ width: `${recommendation.matchScore}%` }} />
@@ -427,7 +435,7 @@ const SleepQuiz = () => {
 
                             <div className="space-y-4 mb-10">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    Why this mattress:
+                                    Why it's perfect for you:
                                 </p>
                                 {recommendation.reasons.map((reason, i) => (
                                     <div key={i} className="flex gap-3 text-slate-700 items-start">
@@ -460,7 +468,7 @@ const SleepQuiz = () => {
 
                 {/* Alternatives */}
                 <div className="max-w-6xl mx-auto mb-24">
-                    <h3 className="text-2xl font-black text-slate-900 mb-10 text-center tracking-tight">Other Great Matches</h3>
+                    <h3 className="text-2xl font-black text-slate-900 mb-10 text-center tracking-tight">Other Good Options</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {alternatives.map(alt => (
                             <div key={alt._id} className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl hover:shadow-2xl transition-all group flex flex-col">
@@ -528,21 +536,21 @@ const SleepQuiz = () => {
                                 </div>
                             </div>
                             <h1 className="quiz-title mb-6">
-                                Find Your Perfect <br />
-                                <span className="text-gradient">Sleep Precision</span>
+                                Find Your <br />
+                                <span className="text-gradient">Perfect Mattress</span>
                             </h1>
                             <p className="quiz-subtitle mb-12 max-w-xl mx-auto">
-                                Answer 6 quick questions and get a personalized recommendation based on your body metrics and unique sleep profile.
+                                Just 6 quick questions. We'll match you with the best mattress based on your sleep style and comfort needs.
                             </p>
                             <button onClick={() => setStep(1)} className="btn-quiz-primary group">
-                                Start Sleep Quiz
+                                Start Quiz
                                 <FiChevronRight className="ml-3 group-hover:translate-x-1 transition-transform" />
                             </button>
 
                             <div className="mt-16 flex items-center justify-center gap-8 text-slate-400">
                                 <div className="flex items-center gap-2">
                                     <FiCheck className="text-emerald-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">100% Free</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Free & Easy</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <FiTarget className="text-blue-500" />
@@ -550,7 +558,7 @@ const SleepQuiz = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <FiMapPin className="text-purple-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Private & Secure</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Your Privacy Safe</span>
                                 </div>
                             </div>
                         </div>
@@ -585,8 +593,8 @@ const SleepQuiz = () => {
                                 <div className="ring-inner"></div>
                                 <FiActivity className="center-icon animate-pulse" size={60} />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 mb-4">Neural Match Syncing...</h2>
-                            <p className="text-slate-400 font-bold tracking-widest text-[11px] uppercase grayscale opacity-60">Analyzing biometrics x product engineering</p>
+                            <h2 className="text-3xl font-black text-slate-900 mb-4">Finding Your Match...</h2>
+                            <p className="text-slate-400 font-bold tracking-widest text-[11px] uppercase grayscale opacity-60">Your perfect mattress is loading</p>
                         </div>
                     )}
 
