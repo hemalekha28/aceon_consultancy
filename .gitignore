@@ -1,0 +1,45 @@
+# Environment variables - NEVER commit
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Dist/Build files
+dist/
+build/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temp files
+.temp/
+tmp/
+
+# Environment config samples (for reference only)
+# DO NOT include actual .env files, use .env.example instead
