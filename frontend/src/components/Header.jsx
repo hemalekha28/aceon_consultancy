@@ -152,8 +152,8 @@ const Header = () => {
                 </div>
               ) : (
                 <div className="auth-buttons">
-                  <Link to="/login" className="btn-auth-primary">Login</Link>
-                  <Link to="/register" className="btn-auth-gradient">Join</Link>
+                  <Link to="/login" className="btn-auth-gradient">Login</Link>
+                  <Link to="/register" className="btn-auth-gradient">Register</Link>
                 </div>
               )}
             </div>
@@ -404,19 +404,6 @@ const Header = () => {
             color: #ef4444 !important;
           }
           
-          .btn-auth-primary {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #475569;
-            text-decoration: none;
-            margin-right: 0.5rem;
-            transition: color 0.2s;
-          }
-          
-          .btn-auth-primary:hover {
-            color: #36d1c4;
-          }
-
           .btn-auth-gradient {
             font-weight: 600;
             font-size: 0.9rem;
@@ -429,6 +416,7 @@ const Header = () => {
             display: inline-block;
             border: none;
             cursor: pointer;
+            margin-left: 0.5rem;
           }
           
           .btn-auth-gradient:hover {
