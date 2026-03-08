@@ -242,7 +242,10 @@ const SleepQuiz = () => {
             </div>
         </div>
     );
-How do you sleep?</h2>
+
+    const renderQuestion3 = () => (
+        <div className="animate-slide-in">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">How do you sleep?</h2>
             <p className="text-slate-500 mb-12 text-lg font-medium">Choose your most common sleeping position</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -257,10 +260,7 @@ How do you sleep?</h2>
                         onClick={() => handleAnswer('position', opt.id)}
                         className="quiz-option-btn group flex-col items-center gap-4 p-10 text-center"
                     >
-                        <span className="text-6xl group-hover:scale-125 transition-transformosition', opt.id)}
-                        className="quiz-option-btn group flex-col items-start gap-4 p-10"
-                    >
-                        <span className="text-5xl mb-2">{opt.icon}</span>
+                        <span className="text-6xl group-hover:scale-125 transition-transform">{opt.icon}</span>
                         <div>
                             <span className="block font-black text-slate-900 text-xl group-hover:text-indigo-600 transition-colors">{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.subtext}</span>
@@ -270,7 +270,10 @@ How do you sleep?</h2>
             </div>
         </div>
     );
-Do you have back pain?</h2>
+
+    const renderQuestion4 = () => (
+        <div className="animate-slide-in">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Do you have back pain?</h2>
             <p className="text-slate-500 mb-12 text-lg font-medium">This helps us find a mattress with the right support</p>
 
             <div className="flex flex-col gap-5 mb-8">
@@ -319,6 +322,43 @@ Do you have back pain?</h2>
                         onClick={nextStep}
                         className="mt-10 w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-[2rem] font-black hover:shadow-lg transition-all shadow-xl shadow-slate-200"
                     >
+                        Continue →
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+                        </div>
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${answers.backPain === opt.id ? 'border-indigo-600 bg-white' : 'border-slate-100'}`}>
+                            {answers.backPain === opt.id && <div className="w-4 h-4 rounded-full bg-indigo-600" />}
+                        </div>
+                    </button>
+                ))}
+            </div>
+
+            {(answers.backPain === 'frequently' || answers.backPain === 'occasionally') && (
+                <div className="mt-8 p-10 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
+                    <p className="font-black text-[11px] text-slate-400 uppercase tracking-widest mb-6">Where do you feel pain?</p>
+                    <div className="grid grid-cols-2 gap-6">
+                        {['Lower back', 'Upper back', 'Hips', 'Shoulders'].map(area => (
+                            <label key={area} className="flex items-center gap-4 cursor-pointer group">
+                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${answers.painAreas.includes(area) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
+                                    {answers.painAreas.includes(area) && <FiCheck className="text-white" size={14} />}
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={answers.painAreas.includes(area)}
+                                    onChange={() => handlePainAreaToggle(area)}
+                                />
+                                <span className={`font-bold transition-colors ${answers.painAreas.includes(area) ? 'text-indigo-600' : 'text-slate-600 group-hover:text-slate-900'}`}>{area}</span>
+                            </label>
+                        ))}
+                    </div>
+                    <button
+                        onClick={nextStep}
+                        className="mt-10 w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-[2rem] font-black hover:shadow-lg transition-all shadow-xl shadow-slate-200"
+                    >
                         Continue
                         className="mt-10 w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
                     >
@@ -330,7 +370,8 @@ Do you have back pain?</h2>
     );
 
     const renderQuestion5 = () => (
-        <div className="animate-slide-in">Do you sleep hot or cold?</h2>
+        <div className="animate-slide-in">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Do you sleep hot or cold?</h2>
             <p className="text-slate-500 mb-12 text-lg font-medium">This affects the mattress cooling technology we recommend</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -347,8 +388,7 @@ Do you have back pain?</h2>
                     >
                         <span className="text-6xl mb-2 group-hover:scale-125 transition-transform">{opt.icon}</span>
                         <div>
-                            <span className="block font-black text-xl text-slate-800 group-hover:text-indigo-600 transition-colors
-                            <span className="block font-black text-xl text-slate-800 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{opt.label}</span>
+                            <span className="block font-black text-xl text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.sub}</span>
                         </div>
                     </button>
@@ -358,7 +398,8 @@ Do you have back pain?</h2>
     );
 
     const renderQuestion6 = () => (
-        <div className="animate-slide-in">What's your budget?</h2>
+        <div className="animate-slide-in">
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">What's your budget?</h2>
             <p className="text-slate-500 mb-12 text-lg font-medium">Choose a price range that works for you</p>
 
             <div className="flex flex-col gap-5">
@@ -375,8 +416,7 @@ Do you have back pain?</h2>
                         className="quiz-option-btn group p-8 flex items-center gap-4"
                     >
                         <span className="text-4xl">{opt.icon}</span>
-                        <div className="flex flex-col text-left flex-1
-                        <div className="flex flex-col">
+                        <div className="flex flex-col text-left flex-1">
                             <span className="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{opt.label}</span>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{opt.price}</span>
                         </div>
@@ -386,7 +426,6 @@ Do you have back pain?</h2>
             </div>
         </div>
     );
-
 
     const renderResults = () => {
         if (!recommendation) return null;
