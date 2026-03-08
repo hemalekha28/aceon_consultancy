@@ -566,19 +566,6 @@ export const api = {
     }
   },
 
-  // Get ML-based Analytics
-  getMLAnalytics: async () => {
-    try {
-      console.log('Fetching ML analytics data...');
-      const response = await API.get('/ml-insights');
-      console.log('ML Analytics response:', response.data);
-      return response.data;
-    } catch (err) {
-      console.error("API error fetching ML analytics:", err);
-      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch ML analytics');
-    }
-  },
-
   // Cart methods - Now these reference the properly defined cartAPI
   getCart: cartAPI.getCart,
   addToCart: cartAPI.addToCart,

@@ -162,12 +162,11 @@ const ProductManagement = () => {
   );
 
   const categories = [
-    'electronics',
-    'clothing',
-    'books',
-    'home',
-    'sports',
-    'other'
+    'latex',
+    'coir',
+    'memory-foam',
+    'softy-foam',
+    'spring'
   ];
 
   return (

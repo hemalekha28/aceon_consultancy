@@ -185,11 +185,11 @@ const ProductListing = () => {
                 onChange={(e) => handleFilterChange('category', e.target.value)}
               >
                 <option value="all">All Collections</option>
+                <option value="latex">Latex</option>
+                <option value="coir">Coir</option>
                 <option value="memory-foam">Memory Foam</option>
-                <option value="hybrid">Hybrid Mattresses</option>
-                <option value="orthopedic">Orthopedic</option>
-                <option value="bedding">Luxury Bedding</option>
-                <option value="accessories">Sleep Accessories</option>
+                <option value="softy-foam">Softy Foam</option>
+                <option value="spring">Spring</option>
               </select>
             </div>
 

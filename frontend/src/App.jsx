@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider } from './context/authContext';
-import { useAuth } from './context/useAuth';
+import { AuthProvider, useAuth } from './context/authContext';
 import { CartProvider, useCart } from './context/cartContext';
 import { NotificationProvider, useNotification } from './context/notificationContext';
 import { CompareProvider, useCompare } from './context/compareContext';
@@ -20,30 +19,32 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
 import OrderManagement from './pages/OrderManagement';
 import UserManagement from './pages/UserManagement';
+import SalesAnalytics from './pages/SalesAnalytics';
 import Cart from './components/Cart';
 import Wishlist from './pages/WishList';
 import ProductListing from './pages/ProductListing';
 import ComparePage from './pages/ComparePage';
 import Chatbot from './components/Chatbot';
 import SimpleChatbot from './components/SimpleChatbot';
+import SleepQuiz from './pages/SleepQuiz';
 
 // Role selection component
 const RoleSelector = ({ onRoleSelect }) => {
   return (
-    <div className="role-selector" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <div style={{ width: '100%', maxWidth: '800px', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ color: 'white' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)' }}>Welcome to LuxeSleep</h1>
-          <p style={{ fontSize: '1.25rem', marginBottom: '2rem', opacity: 0.95 }}>Premium handcrafted mattresses for your best night's sleep.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+    <div className="role-selector">
+      <div className="container">
+        <div className="hero">
+          <h1>Welcome to ACEON</h1>
+          <p>Experience True Comfort with ACEON. Premium handcrafted mattresses for your best night's sleep.</p>
+          <div className="flex justify-center gap-4 mt-4">
             <button
-              style={{ padding: '12px 32px', backgroundColor: '#ffd814', color: '#111', fontWeight: 700, fontSize: '16px', border: 'none', borderRadius: '4px', cursor: 'pointer', boxShadow: '0 1px 0 #fcd200' }}
+              className="btn btn-primary btn-lg"
               onClick={() => onRoleSelect('user')}
             >
               Continue as User
             </button>
             <button
-              style={{ padding: '12px 32px', backgroundColor: '#ffeb99', color: '#0066c0', fontWeight: 700, fontSize: '16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              className="btn btn-secondary btn-lg"
               onClick={() => onRoleSelect('admin')}
             >
               Continue as Admin
@@ -100,6 +101,7 @@ const AdminLayout = ({ children }) => {
             <li><Link to="/admin/products">Products</Link></li>
             <li><Link to="/admin/orders">Orders</Link></li>
             <li><Link to="/admin/users">Users</Link></li>
+            <li><Link to="/admin/analytics">Sales Analytics</Link></li>
           </ul>
         </nav>
         <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -130,14 +132,24 @@ const NotificationConnector = () => {
 };
 
 function App() {
-  const [selectedRole, setSelectedRole] = useState('user');
+  const [selectedRole, setSelectedRole] = useState(null);
 
   useEffect(() => {
-    // Check if role was previously selected, otherwise default to user
-    const savedRole = localStorage.getItem('userRole') || 'user';
-    setSelectedRole(savedRole);
-    localStorage.setItem('userRole', savedRole);
+    // Check if role was previously selected
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole) {
+      setSelectedRole(savedRole);
+    }
   }, []);
+
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role);
+    localStorage.setItem('userRole', role);
+  };
+
+  if (!selectedRole) {
+    return <RoleSelector onRoleSelect={handleRoleSelect} />;
+  }
 
   return (
     <AuthProvider>
@@ -185,6 +197,7 @@ function AppContent({ selectedRole }) {
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/quiz" element={<SleepQuiz />} />
             <Route
               path="/checkout"
               element={
@@ -253,6 +266,16 @@ function AppContent({ selectedRole }) {
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <UserManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <SalesAnalytics />
                   </AdminLayout>
                 </ProtectedRoute>
               }
