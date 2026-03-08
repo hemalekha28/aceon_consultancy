@@ -570,7 +570,7 @@ const UserDashboard = () => {
     <div className="container" style={{ padding: '2rem 0' }}>
       {/* Welcome Banner */}
       <div style={{
-        background: 'var(--gradient-blue-dark)',
+        background: '#ffffff',
         borderRadius: '16px',
         padding: '2rem',
         marginBottom: '2rem',
@@ -584,7 +584,10 @@ const UserDashboard = () => {
             margin: '0 0 0.5rem 0',
             fontSize: '2rem',
             fontWeight: '700',
-            color: 'white'
+            background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
           }}>
             Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
           </h1>
@@ -592,7 +595,10 @@ const UserDashboard = () => {
             margin: 0,
             fontSize: '1rem',
             opacity: 0.9,
-            color: 'white'
+            background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
           }}>
             Here's an overview of your account activity
           </p>
@@ -603,7 +609,7 @@ const UserDashboard = () => {
           right: '-50px',
           width: '200px',
           height: '200px',
-          background: 'rgba(255, 255, 255, 0.1)',
+          background: 'rgba(54, 209, 196, 0.08)',
           borderRadius: '50%',
           zIndex: 0
         }}></div>
@@ -613,7 +619,7 @@ const UserDashboard = () => {
           left: '-30px',
           width: '150px',
           height: '150px',
-          background: 'rgba(255, 255, 255, 0.08)',
+          background: 'rgba(54, 209, 196, 0.05)',
           borderRadius: '50%',
           zIndex: 0
         }}></div>
