@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
+import LoginModal from './LoginModal';
+import RegisterModal from './RegisterModal';
+import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
 import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut } from 'react-icons/fi';
+import aceon from'../assets/aceon-logo.png';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -14,6 +17,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -54,8 +59,22 @@ const Header = () => {
       <div className="container">
         <div className="navbar-content">
           {/* Logo */}
-          <Link to="/" className="navbar-brand">
-            LuxeSleep
+          <Link to="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <img 
+              src={aceon} 
+              alt="ACEON Logo" 
+              style={{
+                height: '54px', // Increased size
+                width: '84px', // Increased size
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                background: 'white',
+                borderRadius: '20%', // Make the logo round
+                objectFit: 'cover',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              }} 
+            />
           </Link>
 
           {/* Search Bar */}
@@ -94,7 +113,7 @@ const Header = () => {
             {/* Wishlist */}
             <Link to="/wishlist" className="btn btn-secondary" style={{
               position: 'relative',
-              background: 'var(--primary)',
+              background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
               color: '#FFFFFF',
               border: 'none'
             }}>
@@ -102,143 +121,53 @@ const Header = () => {
               {wishlist.length > 0 && (
                 <span
                   className="badge badge-danger"
-                  style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    minWidth: '20px',
-                    height: '20px',
-                    fontSize: '0.7rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  style={{ position: 'absolute', top: '-8px', right: '-8px', fontSize: '10px', padding: '2px 6px' }}
                 >
                   {wishlist.length}
                 </span>
               )}
             </Link>
-
             {/* Cart */}
             <Link to="/cart" className="btn btn-secondary" style={{
               position: 'relative',
-              background: 'var(--primary)',
+              background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
               color: '#FFFFFF',
               border: 'none'
             }}>
               <FiShoppingCart />
               {getCartItemsCount() > 0 && (
                 <span
-                  className="badge badge-primary"
-                  style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    minWidth: '20px',
-                    height: '20px',
-                    fontSize: '0.7rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className="badge badge-danger"
+                  style={{ position: 'absolute', top: '-8px', right: '-8px', fontSize: '10px', padding: '2px 6px' }}
                 >
                   {getCartItemsCount()}
                 </span>
               )}
             </Link>
-
-            {/* User Menu */}
+            {/* User */}
             {user ? (
-              <div ref={userMenuRef} style={{ position: 'relative' }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  style={{
-                    background: 'var(--primary)',
-                    color: '#FFFFFF',
-                    border: 'none'
-                  }}
-                >
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setShowUserMenu((v) => !v)} className="btn btn-secondary" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: '#fff', border: 'none' }}>
                   <FiUser />
-                  <span>{user.name}</span>
                 </button>
-
                 {showUserMenu && (
-                  <div
-                    className="card"
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      minWidth: '200px',
-                      zIndex: 1000,
-                      marginTop: '0.5rem'
-                    }}
-                  >
-                    <div className="card-body" style={{ padding: '1rem' }}>
-                      <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--gray-200)' }}>
-                        <div style={{ fontWeight: '600' }}>{user.name}</div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{user.email}</div>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <Link
-                          to="/dashboard"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => setShowUserMenu(false)}
-                          style={{ justifyContent: 'flex-start' }}
-                        >
-                          <FiUser />
-                          Dashboard
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="btn btn-danger btn-sm"
-                          style={{ justifyContent: 'flex-start' }}
-                        >
-                          <FiLogOut />
-                          Logout
-                        </button>
-                      </div>
-                    </div>
+                  <div ref={userMenuRef} style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderRadius: '8px', minWidth: '120px', zIndex: 10 }}>
+                    <button onClick={handleLogout} style={{ width: '100%', padding: '8px 16px', background: 'none', border: 'none', color: '#1e3c72', textAlign: 'left', cursor: 'pointer' }}>
+                      <FiLogOut style={{ marginRight: '8px' }} /> Logout
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Link to="/login" className="btn btn-secondary">
-                  Login
-                </Link>
-                <Link to="/register" className="btn btn-primary">
-                  Register
-                </Link>
-              </div>
+              <>
+                <button className="btn btn-login" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: '#fff', border: 'none', marginRight: 8 }} onClick={() => { setShowLogin(true); setShowRegister(false); }}>Login</button>
+                <button className="btn btn-register" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: '#fff', border: 'none' }} onClick={() => { setShowRegister(true); setShowLogin(false); }}>Register</button>
+                <LoginModal open={showLogin} onClose={() => setShowLogin(false)} onSwitchToRegister={() => { setShowLogin(false); setShowRegister(true); }} />
+                <RegisterModal open={showRegister} onClose={() => setShowRegister(false)} onSwitchToLogin={() => { setShowRegister(false); setShowLogin(true); }} />
+              </>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Mobile Search (visible only on mobile) */}
-      <div className="container" style={{ display: 'none' }}>
-        <style>
-          {`@media (max-width: 768px) {
-            .navbar-content form { display: none !important; }
-            .container > form { display: flex !important; }
-          }`}
-        </style>
-        <form onSubmit={handleSearch} className="flex" style={{ padding: '1rem 0' }}>
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input"
-            style={{ flex: 1, marginRight: '0.5rem' }}
-          />
-          <button type="submit" className="btn btn-primary">
-            <FiSearch />
-          </button>
-        </form>
       </div>
     </header>
   );

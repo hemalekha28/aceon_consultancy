@@ -173,14 +173,14 @@
 }
 
 .product-card__button--primary {
-  background: #2563eb;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   color: white;
-  border-color: #2563eb;
+  border-color: #36d1c4;
 }
 
 .product-card__button--primary:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
+  border-color: #36d1c4;
 }
 
 .product-card__button--secondary:hover {
@@ -267,7 +267,7 @@
   display: inline-block;
   margin-top: 2rem;
   padding: 0.75rem 1.5rem;
-  background: #2563eb;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   color: white;
   border-radius: 0.375rem;
   text-decoration: none;
@@ -279,9 +279,9 @@
 }
 
 .btn-view-all:hover {
-  background: #1d4ed8;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 12px rgba(54, 209, 196, 0.3);
 }
 
 /* Loading state */
@@ -541,7 +541,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.75rem 2rem;
-  background: #4f46e5;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   color: white;
   font-weight: 600;
   border-radius: 0.5rem;
@@ -551,9 +551,9 @@
 }
 
 .btn-view-all:hover {
-  background: #4338ca;
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 4px 12px rgba(54, 209, 196, 0.3);
 }
 
 .btn-view-all svg {

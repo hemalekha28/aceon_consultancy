@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar } from 'react-icons/fi';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
 import { api } from "../utils/api";

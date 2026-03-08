@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/authContext';
+import { AuthProvider } from './context/authContext';
+import { useAuth } from './context/useAuth';
 import { CartProvider, useCart } from './context/cartContext';
 import { NotificationProvider, useNotification } from './context/notificationContext';
 import { CompareProvider, useCompare } from './context/compareContext';
@@ -29,20 +30,20 @@ import SimpleChatbot from './components/SimpleChatbot';
 // Role selection component
 const RoleSelector = ({ onRoleSelect }) => {
   return (
-    <div className="role-selector">
-      <div className="container">
-        <div className="hero">
-          <h1>Welcome to LuxeSleep</h1>
-          <p>Premium handcrafted mattresses for your best night's sleep.</p>
-          <div className="flex justify-center gap-4 mt-4">
+    <div className="role-selector" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div style={{ width: '100%', maxWidth: '800px', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ color: 'white' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)' }}>Welcome to LuxeSleep</h1>
+          <p style={{ fontSize: '1.25rem', marginBottom: '2rem', opacity: 0.95 }}>Premium handcrafted mattresses for your best night's sleep.</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
             <button
-              className="btn btn-primary btn-lg"
+              style={{ padding: '12px 32px', backgroundColor: '#ffd814', color: '#111', fontWeight: 700, fontSize: '16px', border: 'none', borderRadius: '4px', cursor: 'pointer', boxShadow: '0 1px 0 #fcd200' }}
               onClick={() => onRoleSelect('user')}
             >
               Continue as User
             </button>
             <button
-              className="btn btn-secondary btn-lg"
+              style={{ padding: '12px 32px', backgroundColor: '#ffeb99', color: '#0066c0', fontWeight: 700, fontSize: '16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               onClick={() => onRoleSelect('admin')}
             >
               Continue as Admin
@@ -129,24 +130,14 @@ const NotificationConnector = () => {
 };
 
 function App() {
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('user');
 
   useEffect(() => {
-    // Check if role was previously selected
-    const savedRole = localStorage.getItem('userRole');
-    if (savedRole) {
-      setSelectedRole(savedRole);
-    }
+    // Check if role was previously selected, otherwise default to user
+    const savedRole = localStorage.getItem('userRole') || 'user';
+    setSelectedRole(savedRole);
+    localStorage.setItem('userRole', savedRole);
   }, []);
-
-  const handleRoleSelect = (role) => {
-    setSelectedRole(role);
-    localStorage.setItem('userRole', role);
-  };
-
-  if (!selectedRole) {
-    return <RoleSelector onRoleSelect={handleRoleSelect} />;
-  }
 
   return (
     <AuthProvider>

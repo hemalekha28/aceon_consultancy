@@ -190,4 +190,69 @@ router.put('/profile', protect, async (req, res) => {
   }
 });
 
+// Google Sign-In endpoint
+router.post('/google-login', async (req, res) => {
+  try {
+    const { email, displayName, photoURL, firebaseUID } = req.body;
+
+    if (!email || !firebaseUID) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and firebaseUID are required'
+      });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user if doesn't exist
+      user = new User({
+        name: displayName || email.split('@')[0],
+        email,
+        firebaseUID,
+        photoURL,
+        role: 'user',
+        // No password for OAuth users
+      });
+      await user.save();
+      console.log('✅ New user created via Google:', user._id);
+    } else {
+      // Update existing user with Firebase info
+      user.firebaseUID = firebaseUID;
+      if (displayName && !user.name.includes(displayName)) {
+        user.name = displayName;
+      }
+      if (photoURL) {
+        user.photoURL = photoURL;
+      }
+      await user.save();
+      console.log('✅ User updated via Google:', user._id);
+    }
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          photoURL: user.photoURL,
+          role: user.role
+        },
+        token
+      }
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google sign-in'
+    });
+  }
+});
+
 module.exports = router;

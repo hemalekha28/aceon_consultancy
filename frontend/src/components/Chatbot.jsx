@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { api } from '../utils/api';
 
 const Chatbot = () => {
