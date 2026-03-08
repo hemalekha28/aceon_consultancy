@@ -328,46 +328,6 @@ const SleepQuiz = () => {
             )}
         </div>
     );
-                        </div>
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${answers.backPain === opt.id ? 'border-indigo-600 bg-white' : 'border-slate-100'}`}>
-                            {answers.backPain === opt.id && <div className="w-4 h-4 rounded-full bg-indigo-600" />}
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            {(answers.backPain === 'frequently' || answers.backPain === 'occasionally') && (
-                <div className="mt-8 p-10 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
-                    <p className="font-black text-[11px] text-slate-400 uppercase tracking-widest mb-6">Where do you feel pain?</p>
-                    <div className="grid grid-cols-2 gap-6">
-                        {['Lower back', 'Upper back', 'Hips', 'Shoulders'].map(area => (
-                            <label key={area} className="flex items-center gap-4 cursor-pointer group">
-                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${answers.painAreas.includes(area) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
-                                    {answers.painAreas.includes(area) && <FiCheck className="text-white" size={14} />}
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={answers.painAreas.includes(area)}
-                                    onChange={() => handlePainAreaToggle(area)}
-                                />
-                                <span className={`font-bold transition-colors ${answers.painAreas.includes(area) ? 'text-indigo-600' : 'text-slate-600 group-hover:text-slate-900'}`}>{area}</span>
-                            </label>
-                        ))}
-                    </div>
-                    <button
-                        onClick={nextStep}
-                        className="mt-10 w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-[2rem] font-black hover:shadow-lg transition-all shadow-xl shadow-slate-200"
-                    >
-                        Continue
-                        className="mt-10 w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
-                    >
-                        Secure Calibration →
-                    </button>
-                </div>
-            )}
-        </div>
-    );
 
     const renderQuestion5 = () => (
         <div className="animate-slide-in">
