@@ -1,0 +1,221 @@
+# 🛡️ Security Best Practices Guide
+
+This guide covers essential security practices for this project.
+
+---
+
+## 🚨 CRITICAL: Sensitive Credentials
+
+### Never Commit These Files
+
+- `.env` - Local environment variables with secrets
+- `.env.local` - Local overrides
+- `**/service-account-key.json` - Firebase admin SDK keys
+- `**/credentials.json` - Google Cloud credentials
+- Any files containing API keys or passwords
+
+These files are protected by `.gitignore` and will NOT be tracked by git.
+
+---
+
+## ✅ Safe Alternatives
+
+### Use Environment Variables
+
+**Instead of hardcoding:**
+```javascript
+// ❌ WRONG - Never do this
+const apiKey = "AIzaSyDb83iT49XzSyzP2I92BafxtQ7mIrrlO3A";
+
+// ✅ RIGHT - Use environment variables
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;  // Frontend
+const apiKey = process.env.FIREBASE_API_KEY;          // Backend
+```
+
+### Use .env.example for Templates
+
+Share configuration templates, not actual values:
+
+```bash
+# ✅ SAFE - Safe to commit
+.env.example → Shows structure with xxx placeholders
+
+# ❌ UNSAFE - Never commit
+.env → Contains actual secrets
+```
+
+---
+
+## 🔐 Local Setup for New Developers
+
+```bash
+# 1. Copy template
+cp .env.example .env
+
+# 2. Edit with YOUR credentials
+nano .env
+# OR
+code .env
+
+# 3. Never commit
+git status
+# Should show: .env is not tracked (gitignore working)
+
+# 4. Verify .env is loaded
+npm run dev
+# Should work without errors
+```
+
+---
+
+## 📋 Checklist Before Each Commit
+
+- [ ] Running `git status` - no `.env` files listed
+- [ ] No hardcoded API keys in code
+- [ ] No secrets in commit messages
+- [ ] No credentials in comments
+- [ ] `.gitignore` protecting sensitive files
+
+---
+
+## 🔑 API Key Security
+
+### Frontend (Vite)
+
+Variables starting with `VITE_` are embedded in client-side code:
+
+```javascript
+// These CAN be public (API keys with restrictions):
+VITE_FIREBASE_API_KEY
+VITE_RAZORPAY_KEY_ID
+
+// These should NOT be here (server secrets):
+DATABASE_PASSWORD  // ❌ Never put in frontend
+JWT_SECRET         // ❌ Never put in frontend
+```
+
+**Protection:** Firebase API Keys should have restrictions:
+- API restrictions (only allow specific APIs)
+- HTTP referrer restrictions (specific domains only)
+
+### Backend (Node.js)
+
+Variables WITHOUT prefix are server-only (safe):
+
+```bash
+# Backend .env (Never exposed to frontend)
+JWT_SECRET=your-secret-here
+DATABASE_PASSWORD=secret
+RAZORPAY_SECRET=secret
+SMTP_PASSWORD=secret
+```
+
+---
+
+## 🌍 GitHub Repository
+
+### If Repository is PUBLIC
+
+Your code is visible to everyone:
+- ✅ Safe: Application code, .env.example
+- ⚠️ Risky: API keys even with short history
+- ❌ Unsafe: Database passwords, admin keys
+
+**Mitigation:**
+1. Use API key restrictions in provider consoles
+2. Regularly rotate keys
+3. Monitor usage for suspicious activity
+
+### If Repository is PRIVATE
+
+Still follow security best practices:
+- Even teammates shouldn't see `.env` files
+- Separate secrets from code
+- Use github.com Secrets for CI/CD
+
+---
+
+## 🚀 Deployment
+
+### Environment Variables in Production
+
+**DO NOT** commit production `.env` to git!
+
+Instead, set variables in your deployment platform:
+
+```
+Vercel → Project Settings → Environment Variables
+Heroku → Config Vars
+AWS → Secrets Manager
+Docker → Environment flags
+GitHub Actions → Secrets
+```
+
+Example for CI/CD:
+
+```yaml
+# GitHub Actions
+- name: Build
+  env:
+    VITE_API_URL: ${{ secrets.API_URL }}
+    VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+  run: npm run build
+```
+
+---
+
+## 🔍 Detection & Response
+
+### If You Accidentally Commit Secrets
+
+**Immediately:**
+1. Rotate the affected credentials
+2. Remove from git history (see FIREBASE_SECURITY_GUIDE.md)
+3. Force push the cleaned history
+4. Monitor account for suspicious activity
+
+**Example:**
+```bash
+# Someone committed .env with API key
+git log --all -- .env  # Find the commit
+git filter-branch ...  # Remove from history
+git push --force       # Update remote
+# Then rotate the API key!
+```
+
+### Regular Security Checks
+
+```bash
+# Search for exposed patterns
+git log -p --all -S "password" -- `:!node_modules`
+git log -p --all -S "secret" -- `:!node_modules`
+git log -p --all -S "API" -- `:!node_modules`
+```
+
+---
+
+## 📚 Resources
+
+- [Firebase Security Best Practices](https://firebase.google.com/docs/database/security)
+- [GitHub Secret Scanning](https://docs.github.com/en/code-security/secret-scanning)
+- [OWASP Secrets Management](https://owasp.org/www-community/Sensitive_Data_Exposure)
+- [12 Factor App - Config](https://12factor.net/config)
+
+---
+
+## 🎯 Key Takeaways
+
+| Do | Don't |
+|---|---|
+| ✅ Use .env files (local only) | ❌ Hardcode secrets in code |
+| ✅ Use environment variables | ❌ Commit .env to git |
+| ✅ Use .env.example templates | ❌ Share actual .env files |
+| ✅ Rotate keys regularly | ❌ Reuse keys across projects |
+| ✅ Use API restrictions | ❌ Create unrestricted keys |
+| ✅ Monitor keys for usage | ❌ Ignore unusual activity |
+
+**Remember:** Once committed to public git, secrets are compromised. Always rotate immediately.
+
+---
+
+**Last Updated:** March 8, 2026
