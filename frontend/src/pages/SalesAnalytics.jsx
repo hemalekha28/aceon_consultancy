@@ -11,7 +11,7 @@ import {
   FiRefreshCw, FiAlertCircle, FiCheckCircle, FiBarChart2,
   FiLoader, FiInbox
 } from 'react-icons/fi';
-import API from '../utils/api';
+import API, { api } from '../utils/api';
 
 /* ─── CONSTANTS ─────────────────────────────────────────────────────────── */
 
@@ -43,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: 6, fontWeight: 600 }}>{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color, fontSize: '0.875rem', fontWeight: 700 }}>
-          {p.name}: {p.dataKey === 'revenue' ? formatINR(p.value) : p.value.toLocaleString('en-IN')}
+          {p.name}: {p.dataKey === 'revenue' ? formatINR(p.value || 0) : (p.value || 0).toLocaleString('en-IN')}
         </p>
       ))}
     </div>
@@ -97,6 +97,15 @@ const EmptyState = ({ message }) => (
 const SalesAnalytics = () => {
   const [timeframe, setTimeframe] = useState('monthly');
   const [chartStyle, setChartStyle] = useState('area');
+  const [isMounted, setIsMounted] = useState(false);
+  const [chartKey, setChartKey] = useState(0);
+
+  useEffect(() => {
+    setIsMounted(true);
+    // Increased delay for layout to fully settle in complex grids
+    const timer = setTimeout(() => setChartKey(prev => prev + 1), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Real data state
   const [dashData, setDashData] = useState(null);
@@ -127,7 +136,12 @@ const SalesAnalytics = () => {
     }
   }, []);
 
-  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+  // SECTION 1: Effects & Polling
+  useEffect(() => {
+    fetchDashboard();
+    const interval = setInterval(fetchDashboard, 120000); // 2 mins
+    return () => clearInterval(interval);
+  }, [fetchDashboard]);
 
   /* ── Derived data ── */
   const chartData = useMemo(() => {
@@ -161,19 +175,28 @@ const SalesAnalytics = () => {
   const criticalStock = stockItems.filter(p => p.stock < 5);
   const warningStock = stockItems.filter(p => p.stock >= 5 && p.stock < 10);
 
-  /* ── Restock handler (optimistic UI, no backend call needed here) ── */
-  const handleRestock = (id) => {
+  /* ── Restock handler (Actual backend call) ── */
+  const handleRestock = async (id) => {
     setRestockingIds(prev => new Set([...prev, id]));
-    setTimeout(() => {
-      setStockItems(prev => prev.map(p => p.id?.toString() === id?.toString() ? { ...p, stock: p.stock + 25 } : p));
+    try {
+      const product = stockItems.find(p => p.id?.toString() === id?.toString());
+      if (product) {
+        const newStock = (product.stock || 0) + 25;
+        await api.updateProduct(id, { stock: newStock });
+        setStockItems(prev => prev.map(p => p.id?.toString() === id?.toString() ? { ...p, stock: newStock } : p));
+      }
+    } catch (err) {
+      console.error('Restock error:', err);
+      alert('Failed to update stock. Please try again.');
+    } finally {
       setRestockingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-    }, 1800);
+    }
   };
 
   /* ── Render ── */
   if (error && !dashData) {
     return (
-      <div className="container" style={{ padding: '2rem 0' }}>
+      <div className="admin-page-wrapper" style={{ padding: '2rem 0' }}>
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <FiAlertCircle size={40} color="var(--danger)" style={{ marginBottom: '1rem' }} />
           <h3 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Failed to Load Analytics</h3>
@@ -187,7 +210,7 @@ const SalesAnalytics = () => {
   }
 
   return (
-    <div className="container" style={{ padding: '2rem 0' }}>
+    <div className="admin-page-wrapper">
 
       {/* ── Page Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -303,42 +326,118 @@ const SalesAnalytics = () => {
               {chartData.length === 0 ? (
                 <EmptyState message={`No ${timeframe} order data found yet. Start receiving orders to see charts here.`} />
               ) : (
-                <div style={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    {chartStyle === 'area' ? (
-                      <AreaChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 10 }}>
-                        <defs>
-                          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="ordGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#b45309" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#b45309" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
-                        <XAxis dataKey="label" tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-light)' }} tickLine={false} />
-                        <YAxis yAxisId="rev" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatK} width={70} />
-                        <YAxis yAxisId="ord" orientation="right" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={45} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ color: 'var(--text-secondary)', fontSize: 12, paddingTop: 12 }} />
-                        <Area yAxisId="rev" type="monotone" dataKey="revenue" name="Revenue" stroke="#1e3a8a" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 5, fill: '#1e3a8a', stroke: '#fff', strokeWidth: 2 }} />
-                        <Area yAxisId="ord" type="monotone" dataKey="orders" name="Orders" stroke="#b45309" strokeWidth={2} fill="url(#ordGrad)" dot={false} activeDot={{ r: 4, fill: '#b45309', stroke: '#fff', strokeWidth: 2 }} />
-                      </AreaChart>
-                    ) : (
-                      <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
-                        <XAxis dataKey="label" tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-light)' }} tickLine={false} />
-                        <YAxis yAxisId="rev" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatK} width={70} />
-                        <YAxis yAxisId="ord" orientation="right" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={45} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ color: 'var(--text-secondary)', fontSize: 12, paddingTop: 12 }} />
-                        <Bar yAxisId="rev" dataKey="revenue" name="Revenue" fill="#1e3a8a" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                        <Bar yAxisId="ord" dataKey="orders" name="Orders" fill="#b45309" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                      </BarChart>
-                    )}
-                  </ResponsiveContainer>
+                <div style={{ height: '400px', width: '100%', minWidth: '300px', position: 'relative', display: 'block', overflow: 'hidden' }}>
+                  {isMounted && chartData.length > 0 && (
+                    <ResponsiveContainer key={`rev-chart-${chartKey}-${chartStyle}`} width="100%" height={400} minHeight={300} aspect={2.5}>
+                      {chartStyle === 'area' ? (
+                        <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                          <defs>
+                            <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.8} />
+                              <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0.1} />
+                            </linearGradient>
+                            <linearGradient id="ordGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#b45309" stopOpacity={0.8} />
+                              <stop offset="95%" stopColor="#b45309" stopOpacity={0.1} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-light)" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={{ stroke: 'var(--border-light)' }}
+                            tickLine={false}
+                            dy={10}
+                          />
+                          <YAxis
+                            yAxisId="rev"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={formatK}
+                          />
+                          <YAxis
+                            yAxisId="ord"
+                            orientation="right"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend verticalAlign="top" height={36} iconType="circle" />
+                          <Area
+                            yAxisId="rev"
+                            type="monotone"
+                            dataKey="revenue"
+                            name="Revenue"
+                            stroke="#1e3a8a"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#revGrad)"
+                            activeDot={{ r: 8, strokeWidth: 0 }}
+                            isAnimationActive={false}
+                          />
+                          <Area
+                            yAxisId="ord"
+                            type="monotone"
+                            dataKey="orders"
+                            name="Orders"
+                            stroke="#b45309"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#ordGrad)"
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                            isAnimationActive={false}
+                          />
+                        </AreaChart>
+                      ) : (
+                        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-light)" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={{ stroke: 'var(--border-light)' }}
+                            tickLine={false}
+                            dy={10}
+                          />
+                          <YAxis
+                            yAxisId="rev"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={formatK}
+                          />
+                          <YAxis
+                            yAxisId="ord"
+                            orientation="right"
+                            tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend verticalAlign="top" height={36} iconType="circle" />
+                          <Bar
+                            yAxisId="rev"
+                            dataKey="revenue"
+                            name="Revenue"
+                            fill="#1e3a8a"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={40}
+                            isAnimationActive={false}
+                          />
+                          <Bar
+                            yAxisId="ord"
+                            dataKey="orders"
+                            name="Orders"
+                            fill="#b45309"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={40}
+                            isAnimationActive={false}
+                          />
+                        </BarChart>
+                      )}
+                    </ResponsiveContainer>
+                  )}
                 </div>
               )}
             </div>
@@ -481,37 +580,40 @@ const SalesAnalytics = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '2rem', alignItems: 'center' }}>
 
                   {/* Donut Chart */}
-                  <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%" cy="50%"
-                          innerRadius="55%"
-                          outerRadius="80%"
-                          paddingAngle={3}
-                          dataKey="units"
-                          nameKey="name"
-                          stroke="none"
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomPieTooltip />} />
-                        <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle"
-                          fill="var(--text-primary)" fontSize={13} fontWeight={700}>
-                          {totalUnits.toLocaleString('en-IN')}
-                        </text>
-                        <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle"
-                          fill="var(--text-tertiary)" fontSize={10}>
-                          Total Units
-                        </text>
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div style={{ height: '400px', width: '100%', minWidth: '300px', position: 'relative', display: 'block', overflow: 'hidden', alignSelf: 'stretch' }}>
+                    {isMounted && pieData.length > 0 && (
+                      <ResponsiveContainer key={`pie-chart-${chartKey}`} width="100%" height={400} minHeight={300} aspect={1}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%" cy="50%"
+                            innerRadius="55%"
+                            outerRadius="80%"
+                            paddingAngle={3}
+                            dataKey="units"
+                            nameKey="name"
+                            stroke="none"
+                            isAnimationActive={false}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomPieTooltip />} />
+                          <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle"
+                            fill="var(--text-primary)" fontSize={13} fontWeight={700}>
+                            {totalUnits.toLocaleString('en-IN')}
+                          </text>
+                          <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle"
+                            fill="var(--text-tertiary)" fontSize={10}>
+                            Total Units
+                          </text>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
 
                   {/* Legend + Stats */}

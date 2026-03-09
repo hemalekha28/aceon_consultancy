@@ -8,11 +8,19 @@ import Image from '../components/Image';
 import { constructImageUrl } from '../utils/imageUtils';
 
 const Cart = () => {
-  const { cartItems, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, getCartTotal, clearCart, isLoading } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-
+  // If loading, show a spinner (optional but good for UX)
+  if (isLoading && cartItems.length === 0) {
+    return (
+      <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+        <div className="spinner"></div>
+        <p>Loading your cart...</p>
+      </div>
+    );
+  }
 
   // Helper function to get consistent product ID
   const getProductId = (item) => {

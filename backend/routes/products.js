@@ -60,6 +60,39 @@ router.get('/', [
 });
 
 // ====================
+// Get Products by IDs (for comparison)
+// ====================
+router.get('/by-ids', async (req, res) => {
+  try {
+    const { ids } = req.query;
+
+    if (!ids) {
+      return res.status(400).json({ success: false, message: 'Product IDs are required' });
+    }
+
+    // Convert to array if single ID is passed
+    const idArray = Array.isArray(ids) ? ids : ids.split(',');
+
+    // Validate IDs format (basic ObjectId validation)
+    const invalidIds = idArray.filter(id => !/^[0-9a-fA-F]{24}$/.test(id));
+    if (invalidIds.length > 0) {
+      return res.status(400).json({ success: false, message: `Invalid product IDs: ${invalidIds.join(', ')}` });
+    }
+
+    // Fetch products by IDs
+    const products = await Product.find({
+      _id: { $in: idArray }
+    }).select('_id name price rating numreviews stock brand description image category');
+
+    // Return only products that were found
+    res.json({ success: true, data: { products } });
+  } catch (error) {
+    console.error('Error fetching products by IDs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching products by IDs' });
+  }
+});
+
+// ====================
 // Get Single Product
 // ====================
 router.get('/:id', async (req, res) => {
@@ -147,38 +180,6 @@ router.put('/:id', protect, admin, [
 });
 // Add this to your backend routes
 
-// ====================
-// Get Products by IDs (for comparison)
-// ====================
-router.get('/by-ids', async (req, res) => {
-  try {
-    const { ids } = req.query;
-
-    if (!ids) {
-      return res.status(400).json({ success: false, message: 'Product IDs are required' });
-    }
-
-    // Convert to array if single ID is passed
-    const idArray = Array.isArray(ids) ? ids : ids.split(',');
-
-    // Validate IDs format (basic ObjectId validation)
-    const invalidIds = idArray.filter(id => !/^[0-9a-fA-F]{24}$/.test(id));
-    if (invalidIds.length > 0) {
-      return res.status(400).json({ success: false, message: `Invalid product IDs: ${invalidIds.join(', ')}` });
-    }
-
-    // Fetch products by IDs
-    const products = await Product.find({
-      _id: { $in: idArray }
-    }).select('_id name price rating numreviews stock brand description image category');
-
-    // Return only products that were found
-    res.json({ success: true, data: { products } });
-  } catch (error) {
-    console.error('Error fetching products by IDs:', error);
-    res.status(500).json({ success: false, message: 'Error fetching products by IDs' });
-  }
-});
 
 // ====================
 // Delete Product (Admin Only)

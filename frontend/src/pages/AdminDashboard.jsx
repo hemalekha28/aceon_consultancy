@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiPackage, FiUsers, FiShoppingCart, FiDollarSign, FiTrendingUp, FiDownload, FiBarChart2, FiRefreshCw } from 'react-icons/fi';
+import { FiPackage, FiUsers, FiShoppingCart, FiDollarSign, FiTrendingUp, FiDownload, FiBarChart2, FiRefreshCw, FiTag } from 'react-icons/fi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  Filler,
 } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import * as XLSX from 'xlsx';
@@ -29,6 +30,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   ArcElement,
+  Filler
 );
 
 const AdminDashboard = () => {
@@ -345,7 +347,7 @@ const AdminDashboard = () => {
 
 
   return (
-    <div className="container" style={{ padding: '2rem 0' }}>
+    <div className="admin-page-wrapper">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ margin: 0 }}>Admin Dashboard</h1>
       </div>
@@ -411,7 +413,7 @@ const AdminDashboard = () => {
           </div>
         </div>
         <div className="card-body">
-          <div className="grid grid-3" style={{ gap: '1.5rem' }}>
+          <div className="grid grid-4" style={{ gap: '1.5rem' }}>
             <Link to="/admin/products" className="btn btn-primary" style={{
               padding: '2rem 1rem',
               flexDirection: 'column',
@@ -443,6 +445,19 @@ const AdminDashboard = () => {
             }}>
               <FiUsers size={32} style={{ marginBottom: '0.5rem' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Users</span>
+            </Link>
+
+            <Link to="/admin/coupons" className="btn btn-primary" style={{
+              padding: '2rem 1rem',
+              flexDirection: 'column',
+              height: 'auto',
+              borderRadius: '16px',
+              background: 'var(--accent)',
+              borderColor: 'var(--accent)',
+              transition: 'all 0.3s ease'
+            }}>
+              <FiTag size={32} style={{ marginBottom: '0.5rem' }} />
+              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Coupons</span>
             </Link>
           </div>
         </div>

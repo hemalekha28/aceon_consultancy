@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './authContext'; // Import your auth context
+import { useAuth } from './authContext';
+import { api } from '../utils/api';
 
 const CartContext = createContext();
 
@@ -16,34 +17,7 @@ export const CartProvider = ({ children }) => {
   const [notificationCallback, setNotificationCallback] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { user, token } = useAuth(); // Get user and token from auth context
-
-  // API Base URL - adjust according to your backend
-  const API_BASE = 'http://localhost:5000/api';
-
-  // Helper function to make API calls
-  const apiCall = async (endpoint, options = {}) => {
-    try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error('API call error:', error);
-      throw error;
-    }
-  };
+  const { user, token } = useAuth();
 
   // Load cart from database when user logs in
   const loadCartFromDB = async () => {
@@ -51,8 +25,8 @@ export const CartProvider = ({ children }) => {
 
     setIsLoading(true);
     try {
-      const result = await apiCall('/cart');
-      if (result.success && result.cart) {
+      const result = await api.getCart();
+      if (result.success && result?.cart) {
         setCartItems(result.cart.items || []);
       }
     } catch (error) {
@@ -77,12 +51,9 @@ export const CartProvider = ({ children }) => {
 
     setIsLoading(true);
     try {
-      const result = await apiCall('/cart/sync', {
-        method: 'POST',
-        body: JSON.stringify({ localCartItems: localCart }),
-      });
+      const result = await api.syncCart(localCart);
 
-      if (result.success && result.cart) {
+      if (result.success && result?.cart) {
         setCartItems(result.cart.items || []);
         // Clear localStorage after successful sync
         localStorage.removeItem('cart');
@@ -122,8 +93,6 @@ export const CartProvider = ({ children }) => {
     initializeCart();
   }, [user, token]);
 
-
-
   // Save cart to localStorage when user is not logged in
   useEffect(() => {
     if (!user) {
@@ -135,8 +104,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems, user]);
 
-
-
   // Allow notification context to register its callback
   const registerNotificationCallback = (callback) => {
     setNotificationCallback(() => callback);
@@ -144,7 +111,6 @@ export const CartProvider = ({ children }) => {
 
   // Helper function to get consistent product ID
   const getProductId = (product) => {
-    // For database items, use productId field, for local items use _id or id
     if (product.productId) {
       return product.productId.toString();
     }
@@ -173,7 +139,6 @@ export const CartProvider = ({ children }) => {
   const addToCart = async (product, quantity = 1) => {
     const productId = getProductId(product);
 
-    // Validate productId
     if (!productId || productId === 'undefined') {
       console.error('Invalid product ID for addToCart:', product);
       showNotification('Error adding item to cart - invalid product', 'error');
@@ -181,22 +146,18 @@ export const CartProvider = ({ children }) => {
     }
 
     if (user && token) {
-      // User logged in - add to database
       setIsLoading(true);
       try {
-        const result = await apiCall('/cart/add', {
-          method: 'POST',
-          body: JSON.stringify({
-            productId,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            category: product.category,
-            quantity,
-          }),
+        const result = await api.addToCart({
+          productId,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category,
+          quantity,
         });
 
-        if (result.success && result.cart) {
+        if (result.success && result?.cart) {
           setCartItems(result.cart.items || []);
           showNotification(`"${product.name}" has been added to your cart!`, 'success');
         }
@@ -207,7 +168,6 @@ export const CartProvider = ({ children }) => {
         setIsLoading(false);
       }
     } else {
-      // User not logged in - use localStorage
       const existingItem = cartItems.find(item => getProductId(item) === productId);
 
       if (existingItem) {
@@ -231,14 +191,12 @@ export const CartProvider = ({ children }) => {
         };
 
         setCartItems(prevItems => [...prevItems, { ...normalizedProduct, quantity }]);
-
         showNotification(`"${product.name}" has been added to your cart!`, 'success');
       }
     }
   };
 
   const removeFromCart = async (productId) => {
-    // Validate productId
     if (!productId || productId === 'undefined') {
       console.error('Invalid product ID for removeFromCart:', productId);
       showNotification('Error removing item from cart - invalid product ID', 'error');
@@ -246,14 +204,11 @@ export const CartProvider = ({ children }) => {
     }
 
     if (user && token) {
-      // User logged in - remove from database
       setIsLoading(true);
       try {
-        const result = await apiCall(`/cart/remove/${productId}`, {
-          method: 'DELETE',
-        });
+        const result = await api.removeFromCart(productId);
 
-        if (result.success && result.cart) {
+        if (result.success && result?.cart) {
           setCartItems(result.cart.items || []);
           showNotification('Item removed from cart', 'info');
         }
@@ -264,13 +219,8 @@ export const CartProvider = ({ children }) => {
         setIsLoading(false);
       }
     } else {
-      // User not logged in - remove from localStorage
       const itemToRemove = cartItems.find(item => getProductId(item) === productId);
-
-      setCartItems(prevItems =>
-        prevItems.filter(item => getProductId(item) !== productId)
-      );
-
+      setCartItems(prevItems => prevItems.filter(item => getProductId(item) !== productId));
       if (itemToRemove) {
         showNotification(`"${itemToRemove.name}" has been removed from your cart.`, 'info');
       }
@@ -278,7 +228,6 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = async (productId, newQuantity) => {
-    // Validate productId
     if (!productId || productId === 'undefined') {
       console.error('Invalid product ID for updateQuantity:', productId);
       showNotification('Error updating cart - invalid product ID', 'error');
@@ -291,24 +240,13 @@ export const CartProvider = ({ children }) => {
     }
 
     if (user && token) {
-      // User logged in - update in database
       setIsLoading(true);
       try {
-        console.log('Updating cart item:', productId, 'to quantity:', newQuantity);
+        const result = await api.updateCartItem(productId, newQuantity);
 
-        const result = await apiCall(`/cart/update/${productId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ quantity: newQuantity }),
-        });
-
-        if (result.success && result.cart) {
+        if (result.success && result?.cart) {
           setCartItems(result.cart.items || []);
-          // Find the item for notification
-          const item = result.cart.items.find(item =>
-            (item.productId && item.productId.toString() === productId) ||
-            (item._id && item._id.toString() === productId) ||
-            (item.id && item.id.toString() === productId)
-          );
+          const item = result.cart.items?.find(item => getProductId(item) === productId);
           if (item) {
             showNotification(`"${item.name}" quantity updated to ${newQuantity}.`, 'info');
           }
@@ -320,7 +258,6 @@ export const CartProvider = ({ children }) => {
         setIsLoading(false);
       }
     } else {
-      // User not logged in - update localStorage
       const item = cartItems.find(item => getProductId(item) === productId);
       if (item) {
         setCartItems(prevItems =>
@@ -330,7 +267,6 @@ export const CartProvider = ({ children }) => {
               : item
           )
         );
-
         showNotification(`"${item.name}" quantity updated to ${newQuantity}.`, 'info');
       }
     }
@@ -340,20 +276,13 @@ export const CartProvider = ({ children }) => {
     const itemCount = cartItems.length;
 
     if (user && token) {
-      // User logged in - clear database
       setIsLoading(true);
       try {
-        const result = await apiCall('/cart/clear', {
-          method: 'DELETE',
-        });
-
+        const result = await api.clearCart();
         if (result.success) {
           setCartItems([]);
           if (itemCount > 0) {
-            showNotification(
-              `Cart cleared! ${itemCount} ${itemCount === 1 ? 'item' : 'items'} removed.`,
-              'info'
-            );
+            showNotification(`Cart cleared! ${itemCount} items removed.`, 'info');
           }
         }
       } catch (error) {
@@ -363,24 +292,19 @@ export const CartProvider = ({ children }) => {
         setIsLoading(false);
       }
     } else {
-      // User not logged in - clear localStorage
       setCartItems([]);
-
       if (itemCount > 0) {
-        showNotification(
-          `Cart cleared! ${itemCount} ${itemCount === 1 ? 'item' : 'items'} removed.`,
-          'info'
-        );
+        showNotification(`Cart cleared! ${itemCount} items removed.`, 'info');
       }
     }
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + ((Number(item?.price) || 0) * (Number(item?.quantity) || 0)), 0);
   };
 
   const getCartItemsCount = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.reduce((total, item) => total + (Number(item?.quantity) || 0), 0);
   };
 
   const getItemQuantityInCart = (productId) => {
@@ -406,7 +330,7 @@ export const CartProvider = ({ children }) => {
     getCartItemsCount,
     getItemQuantityInCart,
     registerNotificationCallback,
-    loadCartFromDB, // Exposed for manual refresh if needed
+    loadCartFromDB,
   };
 
   return (

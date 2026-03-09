@@ -13,7 +13,7 @@ export const useAuth = () => {
 // Helper function to check if token is expired
 const isTokenExpired = (token) => {
   if (!token) return true;
-  
+
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.exp * 1000 < Date.now();
@@ -68,9 +68,11 @@ export const AuthProvider = ({ children, initialRole }) => {
     setLoading(false);
   }, []);
 
+  const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
+
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,15 +84,15 @@ export const AuthProvider = ({ children, initialRole }) => {
 
       if (response.ok && responseData.success) {
         const { user, token } = responseData.data;
-        
+
         setUser(user);
         setToken(token);
         setUserRole(user.role); // Set the user role from the response
-        
+
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('token', token);
         localStorage.setItem('userRole', user.role); // Store user role
-        
+
         return { success: true, user };
       } else {
         return { success: false, message: responseData.message };
@@ -103,7 +105,7 @@ export const AuthProvider = ({ children, initialRole }) => {
 
   const register = async (userData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,15 +117,15 @@ export const AuthProvider = ({ children, initialRole }) => {
 
       if (response.ok && responseData.success) {
         const { user, token } = responseData.data;
-        
+
         setUser(user);
         setToken(token);
         setUserRole(user.role); // Set the user role from the response
-        
+
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('token', token);
         localStorage.setItem('userRole', user.role); // Store user role
-        
+
         return { success: true, user };
       } else {
         return { success: false, message: responseData.message };
@@ -140,7 +142,7 @@ export const AuthProvider = ({ children, initialRole }) => {
 
   const updateProfile = async (userData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

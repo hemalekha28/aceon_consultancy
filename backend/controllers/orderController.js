@@ -5,10 +5,11 @@ const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } = require("../u
 
 exports.createOrder = async (req, res) => {
   try {
-    const { products, shippingAddress } = req.body;
+    const { products, shippingAddress, coupon, totalAmount, subtotal, shipping, tax } = req.body;
 
     // Validate products and calculate total
-    let total = 0;
+    let calculatedTotal = 0;
+    let discountAmount = 0;
     const orderProducts = [];
 
     for (let item of products) {
@@ -35,11 +36,25 @@ exports.createOrder = async (req, res) => {
         quantity: item.quantity
       });
 
-      total += product.price * item.quantity;
+      calculatedTotal += product.price * item.quantity;
 
       // Update product stock
       product.stock -= item.quantity;
       await product.save();
+    }
+
+    // Use the provided totalAmount if available (which includes discount), otherwise use calculated
+    let finalTotal = calculatedTotal;
+    if (coupon && coupon.discountAmount) {
+      discountAmount = coupon.discountAmount;
+      // If totalAmount is provided, use it (as it's already calculated with discount)
+      if (totalAmount) {
+        finalTotal = totalAmount;
+      } else {
+        finalTotal = calculatedTotal - discountAmount;
+      }
+    } else if (totalAmount) {
+      finalTotal = totalAmount;
     }
 
     const newOrder = new Order({
@@ -51,9 +66,19 @@ exports.createOrder = async (req, res) => {
         postalCode: "00000",
         country: "Default Country"
       },
-      total: total,
-      status: 'pending', // Cash on delivery orders start as pending
-      paymentMethod: 'cash_on_delivery'
+      total: finalTotal,
+      status: 'pending',
+      paymentMethod: req.body.paymentMethod === 'razorpay' ? 'online' : 'cash_on_delivery',
+      paymentStatus: req.body.paymentStatus || 'pending',
+      paymentDetails: req.body.paymentId || req.body.orderId ? {
+        paymentId: req.body.paymentId,
+        orderId: req.body.orderId,
+        status: req.body.paymentStatus || 'pending'
+      } : undefined,
+      coupon: coupon ? {
+        code: coupon.code,
+        discountAmount: coupon.discountAmount
+      } : undefined
     });
 
     await newOrder.save();
@@ -69,7 +94,8 @@ exports.createOrder = async (req, res) => {
         {
           orderId: newOrder._id.toString().slice(-8),
           orderDate: newOrder.createdAt,
-          total: total,
+          total: finalTotal,
+          discount: discountAmount,
           items: orderProducts,
           shippingAddress: newOrder.shippingAddress
         }

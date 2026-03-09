@@ -2,24 +2,37 @@ import axios from "axios";
 
 // Create a single axios instance with base URL
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
-  timeout: 10000
+  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api",
+  timeout: 15000
 });
 
 // Attach token automatically for every request if available
-API.interceptors.request.use((req) => {
-  // Try to get token from localStorage first (for browser compatibility)
-  let token = null;
-  try {
-    token = localStorage.getItem("token");
-  } catch (e) {
-    // If localStorage is not available, set token to null
-    token = null;
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-
-  if (token) req.headers.Authorization = `Bearer ${token}`;
-  return req;
+  return config;
 });
+
+// Handle 401 errors (invalid/expired token)
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.log('Session invalid or expired. Redirecting to login...');
+      // Only redirect if not already on login or register pages
+      const path = window.location.pathname;
+      if (!path.includes('/login') && !path.includes('/register')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Smart product extractor function
 const extractProducts = (data) => {
@@ -651,6 +664,88 @@ export const api = {
     } catch (err) {
       console.error("API error fetching reviewable products:", err);
       throw new Error(err.response?.data?.message || err.message || 'Failed to fetch reviewable products');
+    }
+  },
+
+  // Coupon API methods
+  getCoupons: async () => {
+    try {
+      const response = await API.get('/coupons');
+      return response.data.data || [];
+    } catch (err) {
+      console.error("API error fetching coupons:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch coupons');
+    }
+  },
+
+  addCoupon: async (couponData) => {
+    try {
+      const response = await API.post('/coupons', couponData);
+      return response.data.data;
+    } catch (err) {
+      console.error("API error adding coupon:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to add coupon');
+    }
+  },
+
+  updateCoupon: async (id, couponData) => {
+    try {
+      const response = await API.put(`/coupons/${id}`, couponData);
+      return response.data.data;
+    } catch (err) {
+      console.error("API error updating coupon:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to update coupon');
+    }
+  },
+
+  deleteCoupon: async (id) => {
+    try {
+      const response = await API.delete(`/coupons/${id}`);
+      return response.data;
+    } catch (err) {
+      console.error("API error deleting coupon:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to delete coupon');
+    }
+  },
+
+  getActiveCoupons: async () => {
+    try {
+      const response = await API.get('/coupons/active');
+      return response.data.data || [];
+    } catch (err) {
+      console.error("API error fetching active coupons:", err);
+      return []; // Return empty instead of throwing for dashboard notifications
+    }
+  },
+
+  validateCoupon: async (code) => {
+    try {
+      const response = await API.get(`/coupons/validate/${code}`);
+      return response.data.data;
+    } catch (err) {
+      console.error("API error validating coupon:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Invalid or expired coupon');
+    }
+  },
+
+  // ML Mattress Recommendation API
+  getMattressRecommendation: async (userProfile) => {
+    try {
+      const response = await API.post('/ml/recommend', userProfile);
+      return response.data.data;
+    } catch (err) {
+      console.error("API error getting mattress recommendation:", err);
+      throw err;
+    }
+  },
+
+  getMattressProfiles: async () => {
+    try {
+      const response = await API.get('/ml/profiles');
+      return response.data.data || {};
+    } catch (err) {
+      console.error("API error fetching mattress profiles:", err);
+      return {};
     }
   },
 };

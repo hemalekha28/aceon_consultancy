@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const RazorpayPayment = ({ amount, onSuccess, onError, buttonText = 'Pay Now' }) => {
   const [loading, setLoading] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
 
   const loadRazorpayScript = async () => {
     return loadScript('https://checkout.razorpay.com/v1/checkout.js');
@@ -11,7 +12,7 @@ const RazorpayPayment = ({ amount, onSuccess, onError, buttonText = 'Pay Now' })
 
   const createOrder = async () => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/payments/create-order', {
+      const { data } = await axios.post(`${API_BASE}/payments/create-order`, {
         amount: amount,
         currency: 'INR',
       });
@@ -25,29 +26,29 @@ const RazorpayPayment = ({ amount, onSuccess, onError, buttonText = 'Pay Now' })
   const handlePayment = async () => {
     try {
       setLoading(true);
-      
+
       // Load Razorpay script
       await loadRazorpayScript();
-      
+
       // Create order on backend
       const order = await createOrder();
 
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
-        name: 'Your Store Name',
+        name: 'ACEON Mattresses',
         description: 'Payment for your order',
         order_id: order.id,
-        handler: async function(response) {
+        handler: async function (response) {
           try {
             // Verify payment on your server
-            await axios.post('http://localhost:5000/api/payments/verify-payment', {
+            await axios.post(`${API_BASE}/payments/verify-payment`, {
               order_id: response.razorpay_order_id,
               payment_id: response.razorpay_payment_id,
               signature: response.razorpay_signature
             });
-            
+
             onSuccess(response);
           } catch (error) {
             console.error('Payment verification failed:', error);
@@ -65,10 +66,10 @@ const RazorpayPayment = ({ amount, onSuccess, onError, buttonText = 'Pay Now' })
       };
 
       const paymentObject = new window.Razorpay(options);
-      paymentObject.on('payment.failed', function(response) {
+      paymentObject.on('payment.failed', function (response) {
         onError(`Payment failed: ${response.error.description}`);
       });
-      
+
       paymentObject.open();
     } catch (error) {
       console.error('Payment error:', error);
@@ -79,7 +80,7 @@ const RazorpayPayment = ({ amount, onSuccess, onError, buttonText = 'Pay Now' })
   };
 
   return (
-    <button 
+    <button
       onClick={handlePayment}
       disabled={loading}
       className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"

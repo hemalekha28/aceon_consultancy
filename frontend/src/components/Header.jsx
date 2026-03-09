@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
-import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo, FiTag } from 'react-icons/fi';
+import { api } from '../utils/api';
 import Logo from './Logo';
 
 const Header = () => {
@@ -15,6 +16,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeCoupons, setActiveCoupons] = useState([]);
   const userMenuRef = useRef(null);
 
   // Handle scroll effect
@@ -23,6 +25,17 @@ const Header = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+
+    const fetchCoupons = async () => {
+      try {
+        const coupons = await api.getActiveCoupons();
+        setActiveCoupons(coupons || []);
+      } catch (err) {
+        console.error('Header coupon fetch error:', err);
+      }
+    };
+    fetchCoupons();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -78,6 +91,47 @@ const Header = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Promo Banner */}
+      {activeCoupons.length > 0 && (
+        <div style={{
+          background: 'var(--primary)',
+          color: 'white',
+          padding: '0.6rem 0',
+          textAlign: 'center',
+          fontSize: '0.9rem',
+          fontWeight: '600',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+          position: 'relative',
+          zIndex: 999,
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div className="container flex justify-center items-center gap-3">
+            <span className="flex items-center gap-2">
+              <FiTag size={16} className="text-yellow-400" />
+              Limited Offer: <strong>{activeCoupons[0].code}</strong>
+            </span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+              ({activeCoupons[0].discountType === 'percentage' ? `${activeCoupons[0].discountValue}%` : `₹${activeCoupons[0].discountValue}`} OFF)
+            </span>
+            <Link
+              to="/dashboard"
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                background: 'rgba(255,255,255,0.15)',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                marginLeft: '0.5rem',
+                border: '1px solid rgba(255,255,255,0.3)'
+              }}
+            >
+              Copy Code
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Main Navbar */}
       <div className="navbar">

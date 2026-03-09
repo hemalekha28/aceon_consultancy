@@ -15,6 +15,11 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [activeCoupons, setActiveCoupons] = useState([]);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Check for Buy Now item
   const buyNowItem = location.state?.buyNowItem;
@@ -26,7 +31,54 @@ const Checkout = () => {
   useEffect(() => {
     console.log('Checkout component - Checkout items:', checkoutItems);
     console.log('Checkout component - Mode:', isBuyNow ? 'Buy Now' : 'Cart Checkout');
+
+    // Fetch active coupons
+    const fetchCoupons = async () => {
+      try {
+        const coupons = await api.getActiveCoupons();
+        setActiveCoupons(coupons || []);
+      } catch (err) {
+        console.error('Error fetching checkout coupons:', err);
+      }
+    };
+    fetchCoupons();
   }, [checkoutItems, isBuyNow]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    setValidatingCoupon(true);
+    setCouponError('');
+    try {
+      const couponData = await api.validateCoupon(couponCode.toUpperCase());
+      
+      if (couponData && couponData.code) {
+        // Double check min purchase
+        if (subtotal < (couponData.minPurchase || 0)) {
+          setCouponError(`Minimum purchase of ${formatPrice(couponData.minPurchase || 0)} required.`);
+          setAppliedCoupon(null);
+        } else {
+          setAppliedCoupon(couponData);
+          setCouponError('');
+          alert('Coupon applied successfully!');
+        }
+      } else {
+        setCouponError('Invalid coupon code');
+        setAppliedCoupon(null);
+      }
+    } catch (err) {
+      setCouponError(err.message || 'Invalid or expired coupon code');
+      setAppliedCoupon(null);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
 
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -56,7 +108,18 @@ const Checkout = () => {
 
   const shipping = formData.shippingMethod === 'express' ? 19.99 : subtotal > 50 ? 0 : 9.99;
   const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+
+  // Coupon Discount
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === 'percentage') {
+      discount = (subtotal * appliedCoupon.discountValue) / 100;
+    } else {
+      discount = appliedCoupon.discountValue;
+    }
+  }
+
+  const total = (subtotal - discount) + shipping + tax;
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -147,7 +210,10 @@ const Checkout = () => {
         products: checkoutItems.map((item, index) => ({
           key: `${item.productId || item.id || item._id}-${index}`,
           product: item.productId || item.id || item._id,
-          quantity: item.quantity || 1
+          quantity: item.quantity || 1,
+          price: item.price,
+          name: item.name,
+          image: item.image
         })),
         paymentMethod: 'razorpay',
         paymentStatus: 'paid',
@@ -159,7 +225,17 @@ const Checkout = () => {
           postalCode: formData.zipCode,
           country: formData.country
         },
-        totalAmount: total
+        coupon: appliedCoupon ? {
+          code: appliedCoupon.code,
+          discountAmount: discount
+        } : undefined,
+        userName: formData.firstName,
+        userEmail: formData.email,
+        userPhone: formData.phone,
+        totalAmount: total,
+        subtotal: subtotal,
+        shipping: shipping,
+        tax: tax
       };
 
       // Create order
@@ -216,6 +292,10 @@ const Checkout = () => {
             postalCode: formData.zipCode,
             country: formData.country
           },
+          coupon: appliedCoupon ? {
+            code: appliedCoupon.code,
+            discountAmount: discount
+          } : undefined,
           totalAmount: total
         };
 
@@ -768,12 +848,100 @@ const Checkout = () => {
                     <span>{formatPrice(tax)}</span>
                   </div>
 
+                  {appliedCoupon && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10b981', fontWeight: 'bold' }}>
+                      <span>Discount ({appliedCoupon.code}):</span>
+                      <span>-{formatPrice(discount)}</span>
+                    </div>
+                  )}
+
                   <hr />
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: '600' }}>
                     <span>Total:</span>
                     <span>{formatPrice(total)}</span>
                   </div>
+                </div>
+
+                {/* Coupon Input Area */}
+                <div style={{ marginTop: '2rem', borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🏷️ Have a coupon?
+                  </label>
+                  {!appliedCoupon ? (
+                    <>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="ENTER CODE"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          style={{ textTransform: 'uppercase', flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={handleApplyCoupon}
+                          disabled={validatingCoupon || !couponCode}
+                          style={{ padding: '0.5rem 1rem' }}
+                        >
+                          {validatingCoupon ? '...' : 'Apply'}
+                        </button>
+                      </div>
+                      {couponError && <p style={{ color: '#ef4444', fontSize: '0.8rem', margin: '-0.5rem 0 1rem' }}>{couponError}</p>}
+
+                      {/* Available Coupons Helper */}
+                      {activeCoupons.length > 0 && (
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Available Offers:</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {activeCoupons.map(c => (
+                              <button
+                                key={c._id}
+                                type="button"
+                                onClick={() => setCouponCode(c.code)}
+                                style={{
+                                  background: 'white',
+                                  border: '1px dashed #3b82f6',
+                                  padding: '0.25rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  color: '#3b82f6',
+                                  fontWeight: '700',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {c.code}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid #10b981',
+                      borderRadius: '12px',
+                      padding: '0.75rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div>
+                        <span style={{ fontWeight: '800', color: '#065f46' }}>{appliedCoupon.code}</span>
+                        <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: '#065f46' }}>Applied!</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '700' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="card-footer">

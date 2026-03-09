@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar } from 'react-icons/fi';
+import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar, FiTag } from 'react-icons/fi';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/cartContext';
@@ -22,6 +22,7 @@ const UserDashboard = () => {
   const [editing, setEditing] = useState(false);
   const [reviewableProducts, setReviewableProducts] = useState([]);
   const [userReviews, setUserReviews] = useState([]);
+  const [activeCoupons, setActiveCoupons] = useState([]);
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
@@ -84,6 +85,10 @@ const UserDashboard = () => {
 
         setReviewableProducts(reviewableData || []);
         setUserReviews(reviewsData || []);
+
+        // Load active coupons for users
+        const couponsData = await api.getActiveCoupons().catch(() => []);
+        setActiveCoupons(couponsData || []);
       } catch (error) {
         console.error('Error loading secondary data:', error);
       }
@@ -618,6 +623,96 @@ const UserDashboard = () => {
           zIndex: 0
         }}></div>
       </div>
+
+      {/* Active Coupons Alert Section */}
+      {activeCoupons.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            {activeCoupons.map((coupon) => (
+              <div key={coupon._id} style={{
+                background: 'linear-gradient(135deg, #fff 0%, #f0f9ff 100%)',
+                borderRadius: '16px',
+                padding: '1.25rem 1.5rem',
+                border: '1px dashed var(--primary)',
+                boxShadow: '0 10px 15px -3px rgba(30, 58, 138, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '6px',
+                  height: '100%',
+                  background: 'var(--primary)'
+                }}></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '250px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: 'rgba(30, 58, 138, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary)'
+                  }}>
+                    <FiTag size={24} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Special Offer: {coupon.discountType === 'percentage' ? `${coupon.discountValue}% OFF` : `${formatPrice(coupon.discountValue)} OFF`}
+                    </h4>
+                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>
+                      Valid until {new Date(coupon.expiryDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {coupon.minPurchase > 0 && ` • Min. purchase ${formatPrice(coupon.minPurchase)}`}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    background: 'var(--bg-secondary)',
+                    border: '2px dashed var(--primary)',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    letterSpacing: '1px',
+                    color: 'var(--primary)',
+                    fontFamily: 'monospace'
+                  }}>
+                    {coupon.code}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(coupon.code);
+                      alert('Coupon code copied to clipboard!');
+                    }}
+                    className="btn btn-primary"
+                    style={{
+                      padding: '0.625rem 1.25rem',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      boxShadow: 'var(--shadow-primary)'
+                    }}
+                  >
+                    Copy Code
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Overview Stats */}
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>

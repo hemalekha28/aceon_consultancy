@@ -37,6 +37,8 @@ const analyticsRoutes = require('./routes/analytics');
 const chatbotRoutes = require('./routes/chatbot');
 const reviewRoutes = require('./routes/reviews');
 const paymentRoutes = require('./routes/payment.routes');
+const couponRoutes = require('./routes/coupons');
+const mlRoutes = require('./routes/ml');
 const errorHandler = require('./middlewares/error');
 
 // Routes
@@ -50,6 +52,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/ml', mlRoutes);
 
 // Error Handler (must be last)
 app.use(errorHandler);

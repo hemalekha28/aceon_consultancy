@@ -15,8 +15,8 @@ const orderSchema = new mongoose.Schema({
     name: { type: String, required: true },
     price: { type: Number, required: true },
     image: { type: String, required: true },
-    quantity: { 
-      type: Number, 
+    quantity: {
+      type: Number,
       required: true,
       min: [1, 'Quantity must be at least 1']
     }
@@ -89,6 +89,10 @@ const orderSchema = new mongoose.Schema({
       transactionTimestamp: { type: Date },
       utr: { type: String }
     }
+  },
+  coupon: {
+    code: { type: String, uppercase: true },
+    discountAmount: { type: Number, default: 0 }
   }
 }, {
   timestamps: true

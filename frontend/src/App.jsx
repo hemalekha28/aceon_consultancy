@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/authContext';
-import { CartProvider, useCart } from './context/cartContext';
-import { NotificationProvider, useNotification } from './context/notificationContext';
-import { CompareProvider, useCompare } from './context/compareContext';
-import { WishlistProvider } from './context/wishlistContext';
+import { useAuth } from './context/authContext';
+import { useCart } from './context/cartContext';
+import { useNotification } from './context/notificationContext';
+import { useCompare } from './context/compareContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import NotificationToast from './components/NotificationToast';
@@ -21,10 +20,10 @@ import OrderManagement from './pages/OrderManagement';
 import UserManagement from './pages/UserManagement';
 import SalesAnalytics from './pages/SalesAnalytics';
 import Cart from './components/Cart';
+import CouponManagement from './pages/CouponManagement';
 import Wishlist from './pages/WishList';
 import ProductListing from './pages/ProductListing';
 import ComparePage from './pages/ComparePage';
-import Chatbot from './components/Chatbot';
 import SimpleChatbot from './components/SimpleChatbot';
 import SleepQuiz from './pages/SleepQuiz';
 
@@ -102,6 +101,7 @@ const AdminLayout = ({ children }) => {
             <li><Link to="/admin/orders">Orders</Link></li>
             <li><Link to="/admin/users">Users</Link></li>
             <li><Link to="/admin/analytics">Sales Analytics</Link></li>
+            <li><Link to="/admin/coupons">Coupons</Link></li>
           </ul>
         </nav>
         <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -152,21 +152,11 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <CartProvider>
-          <CompareProvider>
-            <WishlistProvider>
-              <Router>
-                <div className="App">
-                  <AppContent selectedRole={selectedRole} />
-                </div>
-              </Router>
-            </WishlistProvider>
-          </CompareProvider>
-        </CartProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <Router>
+      <div className="App">
+        <AppContent selectedRole={selectedRole} />
+      </div>
+    </Router>
   );
 }
 
@@ -276,6 +266,16 @@ function AppContent({ selectedRole }) {
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <SalesAnalytics />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/coupons"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <CouponManagement />
                   </AdminLayout>
                 </ProtectedRoute>
               }
