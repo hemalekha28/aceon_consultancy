@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middlewares/auth');
+const upload = require('../middlewares/uploadMulter');
+const { bulkCreateProducts } = require('../controllers/productController');
 
 const router = express.Router();
 
@@ -194,6 +196,60 @@ router.delete('/:id', protect, admin, async (req, res) => {
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error deleting product' });
+  }
+});
+
+// ====================
+// Bulk Upload Images (Admin Only)
+// ====================
+router.post('/upload/images', protect, admin, upload.array('images', 50), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No images uploaded'
+      });
+    }
+
+    const imageData = req.files.map(file => ({
+      originalName: file.originalname,
+      filename: file.filename,
+      filepath: `/uploads/${file.filename}`,
+      size: file.size,
+      mimetype: file.mimetype
+    }));
+
+    res.json({
+      success: true,
+      message: `${imageData.length} images uploaded successfully`,
+      data: {
+        images: imageData
+      }
+    });
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload images',
+      error: error.message
+    });
+  }
+});
+
+// ====================
+// Bulk Create Products (Admin Only)
+// ====================
+router.post('/bulk/create', protect, admin, async (req, res) => {
+  try {
+    await bulkCreateProducts(req, res);
+  } catch (error) {
+    console.error('Bulk create error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to bulk create products',
+      error: error.message
+    });
   }
 });
 

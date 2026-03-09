@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag } from 'react-icons/fi';
 import { useCart } from '../context/cartContext';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { formatPrice } from '../utils/helpers';
 import Image from '../components/Image';
 import { constructImageUrl } from '../utils/imageUtils';

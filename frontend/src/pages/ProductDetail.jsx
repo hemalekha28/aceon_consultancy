@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiHeart, FiLoader, FiAlertCircle, FiMinus, FiPlus, FiShoppingBag, FiTag, FiAward, FiPackage } from 'react-icons/fi';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { useNotification } from '../context/notificationContext';
 import ProductImage from '../components/ProductImage';
 import StockBadge from '../components/StockBadge';

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar } from 'react-icons/fi';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
 import { api } from "../utils/api";
@@ -570,7 +570,7 @@ const UserDashboard = () => {
     <div className="container" style={{ padding: '2rem 0' }}>
       {/* Welcome Banner */}
       <div style={{
-        background: 'var(--gradient-blue-dark)',
+        background: '#ffffff',
         borderRadius: '16px',
         padding: '2rem',
         marginBottom: '2rem',
@@ -584,7 +584,10 @@ const UserDashboard = () => {
             margin: '0 0 0.5rem 0',
             fontSize: '2rem',
             fontWeight: '700',
-            color: 'white'
+            background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
           }}>
             Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
           </h1>
@@ -592,7 +595,10 @@ const UserDashboard = () => {
             margin: 0,
             fontSize: '1rem',
             opacity: 0.9,
-            color: 'white'
+            background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
           }}>
             Here's an overview of your account activity
           </p>
@@ -603,7 +609,7 @@ const UserDashboard = () => {
           right: '-50px',
           width: '200px',
           height: '200px',
-          background: 'rgba(255, 255, 255, 0.1)',
+          background: 'rgba(54, 209, 196, 0.08)',
           borderRadius: '50%',
           zIndex: 0
         }}></div>
@@ -613,7 +619,7 @@ const UserDashboard = () => {
           left: '-30px',
           width: '150px',
           height: '150px',
-          background: 'rgba(255, 255, 255, 0.08)',
+          background: 'rgba(54, 209, 196, 0.05)',
           borderRadius: '50%',
           zIndex: 0
         }}></div>
@@ -622,8 +628,8 @@ const UserDashboard = () => {
       {/* Overview Stats */}
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>
         <div className="stat-card" style={{
-          background: 'var(--gradient-blue-dark)',
-          color: 'white',
+          background: '#ffffff',
+          color: '#1f2937',
           border: 'none',
           boxShadow: 'var(--shadow-primary)'
         }}>
@@ -632,22 +638,22 @@ const UserDashboard = () => {
               width: '56px',
               height: '56px',
               borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(54, 209, 196, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backdropFilter: 'blur(10px)'
             }}>
-              <FiShoppingCart size={28} color="white" />
+              <FiShoppingCart size={28} color="#36d1c4" />
             </div>
           </div>
-          <span className="stat-number" style={{ color: 'white', fontSize: '2.5rem' }}>{orders.length}</span>
-          <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Total Orders</span>
+          <span className="stat-number" style={{ color: '#1f2937', fontSize: '2.5rem' }}>{orders.length}</span>
+          <span className="stat-label" style={{ color: '#6b7280' }}>Total Orders</span>
         </div>
 
         <div className="stat-card" style={{
-          background: 'var(--gradient-blue-indigo)',
-          color: 'white',
+          background: '#ffffff',
+          color: '#1f2937',
           border: 'none',
           boxShadow: 'var(--shadow-danger)'
         }}>
@@ -656,22 +662,22 @@ const UserDashboard = () => {
               width: '56px',
               height: '56px',
               borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(54, 209, 196, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backdropFilter: 'blur(10px)'
             }}>
-              <FiPackage size={28} color="white" />
+              <FiPackage size={28} color="#36d1c4" />
             </div>
           </div>
-          <span className="stat-number" style={{ color: 'white', fontSize: '2.5rem' }}>{getCartItemsCount()}</span>
-          <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Items in Cart</span>
+          <span className="stat-number" style={{ color: '#1f2937', fontSize: '2.5rem' }}>{getCartItemsCount()}</span>
+          <span className="stat-label" style={{ color: '#6b7280' }}>Items in Cart</span>
         </div>
 
         <div className="stat-card" style={{
-          background: 'var(--gradient-blue-vibrant)',
-          color: 'white',
+          background: '#ffffff',
+          color: '#1f2937',
           border: 'none',
           boxShadow: 'var(--shadow-accent)'
         }}>
@@ -680,22 +686,22 @@ const UserDashboard = () => {
               width: '56px',
               height: '56px',
               borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(54, 209, 196, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backdropFilter: 'blur(10px)'
             }}>
-              <FiHeart size={28} color="white" />
+              <FiHeart size={28} color="#36d1c4" />
             </div>
           </div>
-          <span className="stat-number" style={{ color: 'white', fontSize: '2.5rem' }}>{wishlist.length}</span>
-          <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Wishlist Items</span>
+          <span className="stat-number" style={{ color: '#1f2937', fontSize: '2.5rem' }}>{wishlist.length}</span>
+          <span className="stat-label" style={{ color: '#6b7280' }}>Wishlist Items</span>
         </div>
 
         <div className="stat-card" style={{
-          background: 'var(--gradient-blue-medium)',
-          color: 'white',
+          background: '#ffffff',
+          color: '#1f2937',
           border: 'none',
           boxShadow: 'var(--shadow-secondary)'
         }}>
@@ -704,22 +710,22 @@ const UserDashboard = () => {
               width: '56px',
               height: '56px',
               borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(54, 209, 196, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backdropFilter: 'blur(10px)'
             }}>
-              <FiUser size={28} color="white" />
+              <FiUser size={28} color="#36d1c4" />
             </div>
           </div>
-          <span className="stat-number" style={{ color: 'white', fontSize: '2.5rem' }}>{formatPrice(totalSpent)}</span>
-          <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Total Spent</span>
+          <span className="stat-number" style={{ color: '#1f2937', fontSize: '2.5rem' }}>{formatPrice(totalSpent)}</span>
+          <span className="stat-label" style={{ color: '#6b7280' }}>Total Spent</span>
         </div>
 
         <div className="stat-card" style={{
-          background: 'var(--gradient-blue-light)',
-          color: 'var(--text-primary)',
+          background: '#ffffff',
+          color: '#1f2937',
           border: 'none',
           boxShadow: 'var(--shadow-lg)'
         }}>
@@ -728,16 +734,16 @@ const UserDashboard = () => {
               width: '56px',
               height: '56px',
               borderRadius: '12px',
-              background: 'rgba(31, 41, 55, 0.1)',
+              background: 'rgba(54, 209, 196, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <FiStar size={28} color="var(--text-primary)" />
+              <FiStar size={28} color="#36d1c4" />
             </div>
           </div>
-          <span className="stat-number" style={{ color: 'var(--text-primary)', fontSize: '2.5rem' }}>{userReviews.length}</span>
-          <span className="stat-label" style={{ color: 'var(--text-secondary)' }}>Reviews Written</span>
+          <span className="stat-number" style={{ color: '#1f2937', fontSize: '2.5rem' }}>{userReviews.length}</span>
+          <span className="stat-label" style={{ color: '#6b7280' }}>Reviews Written</span>
         </div>
       </div>
 

@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import React, { useState, useEffect } from 'react';
+import { signInWithGoogle } from '../config/firebase';
+import { AuthContext } from './authContextCreator';
 
 // Helper function to check if token is expired
 const isTokenExpired = (token) => {
@@ -17,7 +9,7 @@ const isTokenExpired = (token) => {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.exp * 1000 < Date.now();
-  } catch (error) {
+  } catch {
     return true;
   }
 };
@@ -178,6 +170,49 @@ export const AuthProvider = ({ children, initialRole }) => {
     return true;
   };
 
+  // Google Sign-In function
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithGoogle();
+      const firebaseUser = result.user;
+      
+      // Send user data to backend for login/registration
+      const response = await fetch('http://localhost:5000/api/auth/google-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          firebaseUID: firebaseUser.uid,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.success) {
+        const { user, token } = responseData.data;
+        
+        setUser(user);
+        setToken(token);
+        setUserRole(user.role || 'user');
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
+        localStorage.setItem('userRole', user.role || 'user');
+        
+        return { success: true, user };
+      } else {
+        return { success: false, message: responseData.message };
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { success: false, message: error.message || 'Google login failed. Please try again.' };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -189,6 +224,7 @@ export const AuthProvider = ({ children, initialRole }) => {
     updateProfile,
     setUserRole,
     validateSession,
+    loginWithGoogle,
     setUser: (userData) => {
       setUser(userData);
       if (userData) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiTruck, FiLock, FiCheck, FiDollarSign, FiCreditCard, FiShield, FiShoppingCart } from 'react-icons/fi';
 import { useCart } from '../context/cartContext';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { api } from '../utils/api';
 import { formatPrice } from '../utils/helpers';
 import Image from '../components/Image';

@@ -32,6 +32,18 @@ const productSchema = new mongoose.Schema({
     min: [0, 'Stock cannot be negative'],
     default: 0
   },
+  size: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Size cannot exceed 50 characters'],
+    default: null
+  },
+  material: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Material cannot exceed 50 characters'],
+    default: null
+  },
   rating: {
     type: Number,
     min: [0, 'Rating cannot be less than 0'],

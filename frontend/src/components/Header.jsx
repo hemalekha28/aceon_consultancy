@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
-import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut } from 'react-icons/fi';
 import Logo from './Logo';
 
 const Header = () => {
@@ -62,23 +62,6 @@ const Header = () => {
 
   return (
     <header className={`navbar-wrapper ${isScrolled ? 'scrolled' : ''}`}>
-      {/* Top Banner */}
-      <div className="top-banner">
-        <div className="container flex justify-between items-center py-1">
-          <div className="flex items-center gap-4 text-xs font-medium">
-            <span className="flex items-center gap-1"><FiPhone size={12} /> +1 800 ACEON SLEEP</span>
-            <span className="hidden md:flex items-center gap-1"><FiInfo size={12} /> 100-Night Free Trial</span>
-          </div>
-          <div className="text-xs font-bold tracking-wide uppercase">
-            Experience True Comfort with ACEON
-          </div>
-          <div className="hidden md:flex items-center gap-4 text-xs font-medium">
-            <Link to="/about">Our Story</Link>
-            <Link to="/support">Help</Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navbar */}
       <div className="navbar">
         <div className="container">
@@ -169,8 +152,8 @@ const Header = () => {
                 </div>
               ) : (
                 <div className="auth-buttons">
-                  <Link to="/login" className="btn-login-minimal">Login</Link>
-                  <Link to="/register" className="btn btn-primary btn-sm">Join</Link>
+                  <Link to="/login" className="btn-auth-gradient">Login</Link>
+                  <Link to="/register" className="btn-auth-gradient">Register</Link>
                 </div>
               )}
             </div>
@@ -190,13 +173,6 @@ const Header = () => {
           
           .navbar-wrapper.scrolled {
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          }
-          
-          .top-banner {
-            background: #000000;
-            color: #ffffff;
-            font-size: 0.75rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
           }
           
           .navbar {
@@ -290,14 +266,22 @@ const Header = () => {
           
           .action-icon-btn {
             position: relative;
-            color: #475569;
+            background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
+            color: white;
             font-size: 1.4rem;
             display: flex;
-            transition: color 0.2s;
+            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: none;
           }
           
           .action-icon-btn:hover {
-            color: #000000;
+            box-shadow: 0 4px 12px rgba(54, 209, 196, 0.3);
+            transform: translateY(-2px);
           }
           
           .action-badge {
@@ -420,16 +404,24 @@ const Header = () => {
             color: #ef4444 !important;
           }
           
-          .btn-login-minimal {
+          .btn-auth-gradient {
             font-weight: 600;
             font-size: 0.9rem;
-            color: #475569;
+            background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
+            color: white;
             text-decoration: none;
-            margin-right: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            margin-left: 0.5rem;
           }
           
-          .btn-login-minimal:hover {
-            color: #000000;
+          .btn-auth-gradient:hover {
+            box-shadow: 0 4px 12px rgba(54, 209, 196, 0.3);
+            transform: translateY(-2px);
           }
 
           @media (max-width: 1024px) {

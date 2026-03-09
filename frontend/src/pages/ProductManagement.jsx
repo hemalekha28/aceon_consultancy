@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle, FiUploadCloud } from 'react-icons/fi';
 import { api } from '../utils/api';
 import { formatPrice } from '../utils/helpers';
 import { constructImageUrl } from '../utils/imageUtils';
+import BulkProductUpload from '../components/BulkProductUpload';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -23,6 +25,7 @@ const ProductManagement = () => {
 
   useEffect(() => {
     loadProducts();
+    // eslint-disable-next-line
   }, []);
 
   const showNotification = (type, message) => {
@@ -193,13 +196,23 @@ const ProductManagement = () => {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1>Product Management</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn btn-primary"
-        >
-          <FiPlus />
-          Add Product
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            onClick={() => setShowBulkUpload(true)}
+            className="btn btn-secondary"
+            title="Upload multiple products at once"
+          >
+            <FiUploadCloud />
+            Bulk Upload
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn btn-primary"
+          >
+            <FiPlus />
+            Add Product
+          </button>
+        </div>
       </div>
 
       {/* Search and Stats */}
@@ -485,6 +498,17 @@ const ProductManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUpload && (
+        <BulkProductUpload
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={() => {
+            setShowBulkUpload(false);
+            loadProducts();
+          }}
+        />
       )}
     </div>
   );
