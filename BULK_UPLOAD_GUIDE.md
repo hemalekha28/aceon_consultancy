@@ -208,7 +208,7 @@ A: No, bulk upload only adds new products. Existing products remain unchanged.
 **Q: Can I upload the same image for multiple products?**
 A: Yes, upload the image once, and you can use the same filename for multiple products during form filling.
 
-**Q: Are prices in USD or INR?**
+**Q: Are prices in INR or USD?**
 A: Prices are in INR (Indian Rupees). The system shows the ₹ symbol.
 
 **Q: What if a product fails to upload?**
