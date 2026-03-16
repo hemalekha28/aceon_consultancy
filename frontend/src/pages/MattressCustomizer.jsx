@@ -1,350 +1,402 @@
-
-import React, { useState, useEffect } from 'react';
-import '../styles/customizer.css';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiArrowLeft, FiShoppingCart, FiMessageCircle, FiRotateCcw } from 'react-icons/fi';
 import { useCart } from '../context/cartContext';
-import { useNotification } from '../context/notificationContext';
-import mattressBase from '../assets/mattress_base.png';
-import mattressLayers from '../assets/mattress_layers.png';
 import { getCustomizerWhatsAppLink } from '../utils/whatsapp';
+import '../styles/customizer.css';
 
+const SIZES = {
+  Single: { width: 220, depth: 320, multiplier: 1.0 },
+  Queen: { width: 300, depth: 360, multiplier: 1.4 },
+  King: { width: 440, depth: 360, multiplier: 1.7 } // Increased width for King to be "wide and less deep"
+};
+
+const THICKNESS_OPTIONS = [
+  { val: 4, height: 40, adder: 0 },
+  { val: 6, height: 60, adder: 500 },
+  { val: 8, height: 80, adder: 1500 },
+  { val: 10, height: 100, adder: 3000 },
+  { val: 12, height: 120, adder: 5000 }
+];
+
+const MATERIALS = [
+  { 
+    name: 'Memory Foam', 
+    adder: 0, 
+    texture: 'soft',
+    desc: 'Contours perfectly to your body shape for pressure relief.'
+  },
+  { 
+    name: 'Latex', 
+    adder: 2000, 
+    texture: 'pinhole',
+    desc: 'Eco-friendly, bouncy, and stays cool throughout the night.' 
+  },
+  { 
+    name: 'Spring', 
+    adder: 1000, 
+    texture: 'quilted',
+    desc: 'Classic support with excellent airflow and edge durability.'
+  },
+  { 
+    name: 'Hybrid', 
+    adder: 3000, 
+    texture: 'mixed',
+    desc: 'The best of both worlds: plush foam top with spring support.'
+  },
+  { 
+    name: 'Coir', 
+    adder: -500, 
+    texture: 'rough',
+    desc: 'Firm, natural support made from coconut fibers. Extra breathable.'
+  }
+];
+
+const COMFORT_LEVELS = ['Soft', 'Medium', 'Firm', 'Extra Firm'];
+
+const COLORS = [
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Gray', hex: '#888888' },
+  { name: 'Navy', hex: '#1A237E' },
+  { name: 'Cream', hex: '#FFFDE7' },
+  { name: 'Brown', hex: '#5D4037' }
+];
+
+const EMI_PLANS = [
+  { months: 3, rate: 0, label: 'No-Cost EMI' },
+  { months: 6, rate: 12, label: '@ 12% p.a.' },
+  { months: 9, rate: 13, label: '@ 13% p.a.' },
+  { months: 12, rate: 14, label: '@ 14% p.a.' }
+];
+
+const calculateEMI = (principal, annualRate, months) => {
+  if (annualRate === 0) return Math.round(principal / months);
+  const r = annualRate / 12 / 100;
+  const emi = (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+  return Math.round(emi);
+};
+
+// Helper to darken colors
+const darken = (hex, amount) => {
+  if (hex === '#FFFFFF') return `rgb(${255 * (1 - amount)}, ${255 * (1 - amount)}, ${255 * (1 - amount)})`;
+  let [r, g, b] = hex.match(/\w\w/g).map(x => parseInt(x, 16));
+  r = Math.max(0, Math.floor(r * (1 - amount)));
+  g = Math.max(0, Math.floor(g * (1 - amount)));
+  b = Math.max(0, Math.floor(b * (1 - amount)));
+  return `rgb(${r}, ${g}, ${b})`;
+};
 
 const MattressCustomizer = () => {
+  const [size, setSize] = useState('Queen');
+  const [thickness, setThickness] = useState(8);
+  const [material, setMaterial] = useState('Memory Foam');
+  const [comfort, setComfort] = useState('Medium');
+  const [color, setColor] = useState(COLORS[0]);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [emiOpen, setEmiOpen] = useState(false);
+  const [selectedEmi, setSelectedEmi] = useState(null);
+
   const { addToCart } = useCart();
-  const notification = useNotification();
 
-  const [options, setOptions] = useState({
-    size: 'Single',
-    thickness: 8,
-    material: 'Memory Foam',
-    comfort: 'Medium',
-    color: { name: 'White', hex: '#FFFFFF' },
-    features: {
-      coolingGel: false,
-      motionIsolation: false,
-      antiAllergy: false
-    }
-  });
-
-  const [price, setPrice] = useState(10000);
-
-  const sizes = ['Single', 'Queen', 'King'];
-  const thicknesses = [4, 6, 8, 10, 12];
-  const materials = ['Memory Foam', 'Orthopedic', 'Latex', 'Pocket Spring'];
-  const comforts = ['Soft', 'Medium', 'Firm'];
-  const colors = [
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Grey', hex: '#8E8E8E' },
-    { name: 'Blue', hex: '#1a237e' },
-    { name: 'Beige', hex: '#F5F5DC' },
-    { name: 'Brown', hex: '#5D4037' }
-  ];
-
-  useEffect(() => {
-    calculatePrice();
-  }, [options]);
-
-  const calculatePrice = () => {
-    let basePrice = 10000;
+  // Price Calculation
+  const totalPrice = useMemo(() => {
+    const base = 10000;
+    const sizeData = SIZES[size];
+    const thickData = THICKNESS_OPTIONS.find(t => t.val === thickness);
+    const matData = MATERIALS.find(m => m.name === material);
     
-    // Size Multipliers
-    const sizeMults = { 'Single': 1, 'Queen': 1.4, 'King': 1.7 };
-    basePrice *= sizeMults[options.size];
+    return Math.round((base * sizeData.multiplier) + thickData.adder + matData.adder);
+  }, [size, thickness, material]);
 
-    // Material Multipliers
-    const matMults = { 'Memory Foam': 1, 'Orthopedic': 1.1, 'Latex': 1.4, 'Pocket Spring': 1.3 };
-    basePrice *= matMults[options.material];
+  // Flash animation trigger
+  useEffect(() => {
+    setIsFlashing(true);
+    const timer = setTimeout(() => setIsFlashing(false), 300);
+    return () => clearTimeout(timer);
+  }, [totalPrice]);
 
-    // Thickness Multipliers
-    const thickMults = { 4: 1, 6: 1, 8: 1.1, 10: 1.2, 12: 1.4 };
-    basePrice *= thickMults[options.thickness];
-
-    // Feature Additions
-    if (options.features.coolingGel) basePrice += 1500;
-    if (options.features.motionIsolation) basePrice += 1200;
-    if (options.features.antiAllergy) basePrice += 1000;
-
-    setPrice(Math.round(basePrice));
+  const handleSpin = () => {
+    setIsSpinning(true);
+    setTimeout(() => setIsSpinning(false), 1500);
   };
-
-  const handleOptionChange = (key, value) => {
-    setOptions(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleFeatureToggle = (feature) => {
-    setOptions(prev => ({
-      ...prev,
-      features: { ...prev.features, [feature]: !prev.features[feature] }
-    }));
-  };
-
-  const getWhatsAppLink = () => {
-    return getCustomizerWhatsAppLink(options, price);
-  };
-
 
   const handleAddToCart = () => {
-    const product = {
-      _id: `custom-${Date.now()}`,
-      name: `Custom ${options.material} Mattress`,
-      price: price,
-      image: mattressBase,
-      description: `${options.size}, ${options.thickness}", ${options.comfort} comfort`,
-      customOptions: options
+    const customProduct = {
+      id: `custom-${Date.now()}`,
+      name: `Custom ${size} Mattress`,
+      price: totalPrice,
+      image: '/images/custom-preview.jpg', // Placeholder image
+      category: 'Customized',
+      specs: { size, thickness, material, comfort, color: color.name }
     };
-    addToCart(product, 1);
-    notification.showSuccess(`Custom mattress added to cart!`);
+    addToCart(customProduct, 1);
   };
 
-  const [rotation, setRotation] = useState(-30);
-
-  const rotate360 = () => {
-    let current = rotation;
-    const target = current + 360;
-    const interval = setInterval(() => {
-      current += 10;
-      setRotation(current);
-      if (current >= target) clearInterval(interval);
-    }, 20);
+  const handleChatWithExpert = () => {
+    const options = { size, thickness, material, comfort, color, features: {} };
+    const link = getCustomizerWhatsAppLink(options, totalPrice);
+    window.open(link, '_blank');
   };
+
+  const currentDims = SIZES[size];
+  const currentHeight = THICKNESS_OPTIONS.find(t => t.val === thickness).height;
 
   return (
-    <div className="customizer-page">
-      <div className="customizer-header">
-        <h1>Customize Your Perfect Sleep</h1>
-        <p>Design your mattress with premium materials and advanced comfort features</p>
-      </div>
-
-      <div className="customizer-grid">
-        {/* Left Column: Options */}
-        <div className="options-column">
-          <div className="option-group">
-            <label>Select Size</label>
-            <div className="selector-grid">
-              {sizes.map(s => (
-                <div 
-                  key={s} 
-                  className={`selector-item ${options.size === s ? 'active' : ''}`}
-                  onClick={() => handleOptionChange('size', s)}
+    <div className="customizer-root">
+      <div className="customizer-layout">
+        
+        {/* LEFT PANEL: CONFIG */}
+        <aside className="config-panel">
+          <div className="config-section">
+            <span className="section-title">Select Size</span>
+            <div className="pill-group">
+              {Object.keys(SIZES).map(s => (
+                <button 
+                  key={s}
+                  className={`btn-pill ${size === s ? 'active' : ''}`}
+                  onClick={() => setSize(s)}
                 >
                   {s}
-                </div>
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="option-group">
-            <label>Thickness (Inches)</label>
-            <div className="selector-grid">
-              {thicknesses.map(t => (
-                <div 
-                  key={t} 
-                  className={`selector-item ${options.thickness === t ? 'active' : ''}`}
-                  onClick={() => handleOptionChange('thickness', t)}
+          <div className="config-section">
+            <span className="section-title">Thickness</span>
+            <div className="grid-group">
+              {THICKNESS_OPTIONS.map(t => (
+                <button 
+                  key={t.val}
+                  className={`btn-grid ${thickness === t.val ? 'active' : ''}`}
+                  onClick={() => setThickness(t.val)}
                 >
-                  {t}"
-                </div>
+                  {t.val}"
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="option-group">
-            <label>Primary Material</label>
+          <div className="config-section">
+            <span className="section-title">Primary Material</span>
             <select 
-              className="custom-select"
-              value={options.material}
-              onChange={(e) => handleOptionChange('material', e.target.value)}
+              className="styled-select"
+              value={material}
+              onChange={(e) => setMaterial(e.target.value)}
             >
-              {materials.map(m => <option key={m} value={m}>{m}</option>)}
+              {MATERIALS.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+            </select>
+            <div className="material-desc">
+              {MATERIALS.find(m => m.name === material).desc}
+            </div>
+          </div>
+
+          <div className="config-section">
+            <span className="section-title">Comfort Level</span>
+            <select 
+              className="styled-select"
+              value={comfort}
+              onChange={(e) => setComfort(e.target.value)}
+            >
+              {COMFORT_LEVELS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          <div className="option-group">
-            <label>Comfort Level</label>
-            <select 
-              className="custom-select"
-              value={options.comfort}
-              onChange={(e) => handleOptionChange('comfort', e.target.value)}
-            >
-              {comforts.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <div className="option-group">
-            <label>Upholstery Color</label>
-            <div className="color-swatches">
-              {colors.map(c => (
+          <div className="config-section">
+            <span className="section-title">Upholstery Color</span>
+            <div className="swatch-group">
+              {COLORS.map(c => (
                 <div 
                   key={c.name}
-                  className={`swatch-item ${options.color.name === c.name ? 'active' : ''}`}
-                  onClick={() => handleOptionChange('color', c)}
+                  className={`color-swatch ${color.name === c.name ? 'active' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  onClick={() => setColor(c)}
                   title={c.name}
-                >
-                  <div className="swatch-circle" style={{ backgroundColor: c.hex }}></div>
-                  <span className="swatch-label">{c.name}</span>
-                </div>
+                />
               ))}
             </div>
           </div>
+        </aside>
 
-          <div className="option-group">
-            <label>Advanced Features</label>
-            <div className="checkbox-group">
-              <label className="checkbox-item">
-                <input 
-                  type="checkbox" 
-                  checked={options.features.coolingGel}
-                  onChange={() => handleFeatureToggle('coolingGel')}
-                />
-                <span>Cooling Gel Technology (+₹1,500)</span>
-              </label>
-              <label className="checkbox-item">
-                <input 
-                  type="checkbox" 
-                  checked={options.features.motionIsolation}
-                  onChange={() => handleFeatureToggle('motionIsolation')}
-                />
-                <span>Motion Isolation (+₹1,200)</span>
-              </label>
-              <label className="checkbox-item">
-                <input 
-                  type="checkbox" 
-                  checked={options.features.antiAllergy}
-                  onChange={() => handleFeatureToggle('antiAllergy')}
-                />
-                <span>Anti Allergy Protection (+₹1,000)</span>
-              </label>
-            </div>
+        {/* CENTER PANEL: 3D PREVIEW */}
+        <main className="preview-panel">
+          <div className={`btn-360 ${isSpinning ? 'spinning' : ''}`} onClick={handleSpin}>
+            <FiRotateCcw /> 360° VIEW
           </div>
-        </div>
-
-        {/* Center Column: Live Preview */}
-        <div className="preview-column">
-          <button className="btn-360" onClick={rotate360}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-9-9c2.52 0 4.85.83 6.72 2.24" />
-              <path d="M21 3v9h-9" />
-            </svg>
-            360° VIEW
-          </button>
-          <div className="mattress-preview-container">
+          
+          <div className="mattress-world">
             <div 
-              className="live-mattress"
-              style={{ 
-                width: options.size === 'King' ? '460px' : options.size === 'Queen' ? '400px' : '320px',
-                height: '450px',
-                transform: `rotateX(60deg) rotateZ(${rotation}deg)`
+              className={`mattress-box ${isSpinning ? 'box-spin' : ''}`}
+              style={{
+                width: currentDims.width,
+                height: currentDims.depth,
+                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
               }}
             >
-              {/* Top Cover */}
+              {/* Top Face */}
               <div 
-                className="mattress-layer layer-top"
-                style={{ 
-                  backgroundColor: options.color.hex,
-                  transform: `translateZ(${options.thickness * 8}px)`
-                }}
-              >
-                <div className="texture-overlay"></div>
-                <div className="gold-trim"></div>
-              </div>
-
-              {/* Comfort Layer */}
-              <div 
-                className={`mattress-layer layer-foam material-${options.material.toLowerCase().replace(' ', '-')}`}
-                style={{ 
+                className={`m-face face-top texture-${MATERIALS.find(m => m.name === material).texture}`}
+                style={{
+                  width: '100%',
                   height: '100%',
-                  transform: `translateZ(${options.thickness * 4}px)`
+                  backgroundColor: color.hex,
+                  transform: `translateZ(${currentHeight}px)`,
+                  border: '5px solid #FFFDE7' // Piping
                 }}
-              >
-                {options.features.coolingGel && <div className="cooling-gel-effect"></div>}
-              </div>
+              />
+              
+              {/* Front Face (Bottom Edge) */}
+              <div 
+                className="m-face face-front"
+                style={{
+                  width: '100%',
+                  height: currentHeight,
+                  backgroundColor: darken(color.hex, 0.15),
+                  transform: `rotateX(-90deg) translateZ(${currentDims.depth}px)`,
+                  transformOrigin: 'bottom',
+                  borderBottom: '5px solid #FFFDE7' // Piping
+                }}
+              />
 
-              {/* Side walls (Front and Right) */}
+              {/* Back Face (Top Edge - Optional for realism) */}
               <div 
-                className="mattress-side side-front" 
-                style={{ 
-                  backgroundColor: options.color.hex, 
-                  filter: 'brightness(0.8)',
-                  height: `${options.thickness * 8}px`
+                className="m-face face-back"
+                style={{
+                  width: '100%',
+                  height: currentHeight,
+                  backgroundColor: darken(color.hex, 0.15),
+                  transform: `rotateX(-90deg) translateZ(0px)`,
+                  transformOrigin: 'bottom'
                 }}
-              ></div>
+              />
+
+              {/* Right Face */}
               <div 
-                className="mattress-side side-right" 
-                style={{ 
-                  backgroundColor: options.color.hex, 
-                  filter: 'brightness(0.6)',
-                  width: `${options.thickness * 8}px`
+                className="m-face face-right"
+                style={{
+                  width: currentHeight,
+                  height: '100%',
+                  backgroundColor: darken(color.hex, 0.25),
+                  transform: `rotateY(90deg) translateZ(${currentDims.width}px)`,
+                  transformOrigin: 'left',
+                  borderTop: '5px solid #FFFDE7' // Piping
                 }}
-              ></div>
-            </div>
-            
-            <div className="layer-labels">
-              <div className="label-item">
-                <span className="dot" style={{ background: options.color.hex }}></span>
-                <span>Premium Upholstery ({options.color.name})</span>
-              </div>
-              <div className="label-item">
-                <span className="dot" style={{ background: '#e3f2fd' }}></span>
-                <span>{options.material} Comfort Layer</span>
-              </div>
-              {options.features.coolingGel && (
-                <div className="label-item">
-                  <span className="dot" style={{ background: '#2196f3' }}></span>
-                  <span>Cooling Gel Infusion</span>
-                </div>
-              )}
+              />
+
+              {/* Left Face (Optional for realism) */}
+              <div 
+                className="m-face face-left"
+                style={{
+                  width: currentHeight,
+                  height: '100%',
+                  backgroundColor: darken(color.hex, 0.25),
+                  transform: `rotateY(90deg) translateZ(0px)`,
+                  transformOrigin: 'left'
+                }}
+              />
             </div>
           </div>
-        </div>
+        </main>
 
-        {/* Right Column: Order Summary */}
-        <div className="summary-column">
-          <div className="order-summary-card">
-            <h3>Order Summary</h3>
-            <div className="summary-details">
-              <div className="summary-row">
-                <span>Base Mattress</span>
-                <span>₹10,000</span>
-              </div>
-              <div className="summary-row">
-                <span>Size: {options.size}</span>
-                <span>{(options.size === 'Single' ? 'Incl.' : `×${options.size === 'Queen' ? '1.4' : '1.7'}`)}</span>
-              </div>
-              <div className="summary-row">
-                <span>Material: {options.material}</span>
-                <span>{(options.material === 'Memory Foam' ? 'Incl.' : `×${options.material === 'Latex' ? '1.4' : options.material === 'Pocket Spring' ? '1.3' : '1.1'}`)}</span>
+        {/* RIGHT PANEL: SUMMARY */}
+        <aside className="summary-panel">
+          <h2 className="summary-header">Order Summary</h2>
+          
+          <div className="summary-list">
+            <div className="summary-item">
+              <span>Base Mattress</span>
+              <span>₹10,000</span>
+            </div>
+            <div className="summary-item">
+              <span>Size: {size}</span>
+              <span>×{SIZES[size].multiplier.toFixed(1)}</span>
+            </div>
+            <div className="summary-item">
+              <span>Thickness: {thickness}"</span>
+              <span>+{THICKNESS_OPTIONS.find(t => t.val === thickness).adder > 0 ? `₹${THICKNESS_OPTIONS.find(t => t.val === thickness).adder}` : 'Incl.'}</span>
+            </div>
+            <div className="summary-item">
+              <span>Material: {material}</span>
+              <span>{MATERIALS.find(m => m.name === material).adder > 0 ? `+₹${MATERIALS.find(m => m.name === material).adder}` : (MATERIALS.find(m => m.name === material).adder < 0 ? `-₹${Math.abs(MATERIALS.find(m => m.name === material).adder)}` : 'Incl.')}</span>
+            </div>
+            <div className="summary-item">
+              <span>Comfort Level</span>
+              <span>Incl.</span>
+            </div>
+          </div>
+
+          <div className="summary-divider" />
+
+          <div className="total-section">
+            <div className="emi-promo-banner">
+              ✦ No-cost EMI available from ₹{Math.round(totalPrice / 3).toLocaleString()}/mo
+            </div>
+            <span className="total-label">Total Amount</span>
+            <span className={`total-amount ${isFlashing ? 'flash-trigger' : ''}`}>
+              ₹{totalPrice.toLocaleString()}
+            </span>
+          </div>
+
+          {/* EMI SECTION */}
+          <div className="emi-section">
+            <button 
+              className={`emi-toggle ${emiOpen ? 'open' : ''}`}
+              onClick={() => setEmiOpen(!emiOpen)}
+            >
+              💳 Pay with EMI {emiOpen ? '▲' : '▼'}
+            </button>
+            
+            <div className={`emi-content ${emiOpen ? 'expanded' : ''}`}>
+              <div className="emi-grid">
+                {EMI_PLANS.map(plan => {
+                  const emiVal = calculateEMI(totalPrice, plan.rate, plan.months);
+                  const totalWithInterest = emiVal * plan.months;
+                  const isSelected = selectedEmi?.months === plan.months;
+                  
+                  return (
+                    <div 
+                      key={plan.months}
+                      className={`emi-card ${isSelected ? 'active' : ''}`}
+                      onClick={() => setSelectedEmi({ months: plan.months, emi: emiVal, total: totalWithInterest })}
+                    >
+                      <div className="emi-badge">{plan.months} Months</div>
+                      <div className="emi-tag">{plan.label}</div>
+                      <div className="emi-amount">₹{emiVal.toLocaleString()}/mo</div>
+                      <div className="emi-total">Total: ₹{totalWithInterest.toLocaleString()}</div>
+                    </div>
+                  );
+                })}
               </div>
               
-              {Object.entries(options.features).map(([name, active]) => active && (
-                <div key={name} className="summary-row">
-                  <span>{name.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  <span>+₹{name === 'coolingGel' ? '1,500' : name === 'motionIsolation' ? '1,200' : '1,000'}</span>
+              <div className="bank-logos">
+                <span>Available on:</span>
+                <div className="bank-strip">
+                  {['HDFC', 'ICICI', 'SBI', 'Axis', 'Kotak'].map(bank => (
+                    <span key={bank} className="bank-pill">{bank}</span>
+                  ))}
                 </div>
-              ))}
-
-              <div className="summary-row total">
-                <span>Total Amount</span>
-                <span className="price-value">₹{price.toLocaleString()}</span>
               </div>
             </div>
-
-            <div className="action-buttons">
-              <a 
-                href={getWhatsAppLink()} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="btn-whatsapp"
-              >
-                <span>Chat with Expert</span>
-              </a>
-              <button 
-                className="btn-cart-custom"
-                onClick={handleAddToCart}
-              >
-                Add to Cart
-              </button>
-            </div>
           </div>
-        </div>
+
+          <div className="selection-summary">
+            {selectedEmi && (
+              <div className="emi-selected-confirmation">
+                ✓ EMI Selected: ₹{selectedEmi.emi.toLocaleString()}/mo × {selectedEmi.months} months
+              </div>
+            )}
+          </div>
+
+          <div className="cta-group">
+            <button className="btn-cta btn-expert" onClick={handleChatWithExpert}>
+              <FiMessageCircle /> Chat with Expert
+            </button>
+            <button className="btn-cta btn-cart" onClick={handleAddToCart}>
+              <FiShoppingCart /> Add to Cart {selectedEmi ? '(EMI)' : ''}
+            </button>
+          </div>
+        </aside>
+
       </div>
     </div>
   );

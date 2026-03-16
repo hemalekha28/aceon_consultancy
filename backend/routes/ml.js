@@ -15,7 +15,7 @@ router.post('/recommend', getMattressRecommendation);
 
 /**
  * GET /ml/profiles
- * Get all mattress profiles and their ideal conditions
+ * Get all mattress profiles
  */
 router.get('/profiles', getMattressProfiles);
 

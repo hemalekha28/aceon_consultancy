@@ -626,7 +626,7 @@ function ResultCard({ product, rank, added, onAdd, onView }) {
           </button>
           <button
             onClick={onAdd}
-            style={{ flex: 2, padding: '10px', borderRadius: '10px', border: 'none', background: added ? 'rgba(34,197,94,0.2)' : 'linear-gradient(135deg, #7C5CFC, #4FACFE)', color: '#fff', fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s', border: added ? '1px solid rgba(34,197,94,0.5)' : 'none' }}
+            style={{ flex: 2, padding: '10px', borderRadius: '10px', background: added ? 'rgba(34,197,94,0.2)' : 'linear-gradient(135deg, #7C5CFC, #4FACFE)', color: '#fff', fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s', border: added ? '1px solid rgba(34,197,94,0.5)' : 'none' }}
             onMouseEnter={e => { if (!added) e.currentTarget.style.opacity = '0.85'; }}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
