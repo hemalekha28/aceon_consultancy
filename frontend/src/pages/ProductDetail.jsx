@@ -312,14 +312,14 @@ const ProductDetail = () => {
             </button>
 
             <a
-              href={getProductWhatsAppLink(product, quantity)}
+              href={getProductWhatsAppLink(product)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-whatsapp btn-full"
               style={{ padding: '0.875rem' }}
             >
               <FiPhone />
-              <span>Order via WhatsApp</span>
+              <span>Enquire on WhatsApp</span>
             </a>
           </div>
 

@@ -95,6 +95,18 @@ const MattressCustomizer = () => {
     notification.showSuccess(`Custom mattress added to cart!`);
   };
 
+  const [rotation, setRotation] = useState(-30);
+
+  const rotate360 = () => {
+    let current = rotation;
+    const target = current + 360;
+    const interval = setInterval(() => {
+      current += 10;
+      setRotation(current);
+      if (current >= target) clearInterval(interval);
+    }, 20);
+  };
+
   return (
     <div className="customizer-page">
       <div className="customizer-header">
@@ -207,13 +219,20 @@ const MattressCustomizer = () => {
 
         {/* Center Column: Live Preview */}
         <div className="preview-column">
+          <button className="btn-360" onClick={rotate360}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-9-9c2.52 0 4.85.83 6.72 2.24" />
+              <path d="M21 3v9h-9" />
+            </svg>
+            360° VIEW
+          </button>
           <div className="mattress-preview-container">
             <div 
               className="live-mattress"
               style={{ 
                 width: options.size === 'King' ? '460px' : options.size === 'Queen' ? '400px' : '320px',
                 height: '450px',
-                transform: `rotateX(60deg) rotateZ(-30deg)`
+                transform: `rotateX(60deg) rotateZ(${rotation}deg)`
               }}
             >
               {/* Top Cover */}
@@ -315,7 +334,7 @@ const MattressCustomizer = () => {
                 rel="noopener noreferrer" 
                 className="btn-whatsapp"
               >
-                <span>Order via WhatsApp</span>
+                <span>Chat with Expert</span>
               </a>
               <button 
                 className="btn-cart-custom"

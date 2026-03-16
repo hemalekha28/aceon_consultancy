@@ -172,6 +172,39 @@
   min-height: 600px;
 }
 
+.btn-360 {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(26, 35, 126, 0.2);
+}
+
+.btn-360:hover {
+  background: #d4af37;
+  transform: scale(1.05);
+}
+
+.btn-360 svg {
+  transition: transform 0.5s;
+}
+
+.btn-360:hover svg {
+  transform: rotate(180deg);
+}
+
 /* Live 3D Mattress Preview */
 .mattress-preview-container {
   position: relative;
