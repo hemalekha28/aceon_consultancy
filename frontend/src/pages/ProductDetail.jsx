@@ -9,6 +9,10 @@ import ProductImage from '../components/ProductImage';
 import StockBadge from '../components/StockBadge';
 import ReviewsSection from '../components/ReviewsSection';
 import { formatPrice } from '../utils/helpers';
+import { api } from '../utils/api';
+import { getProductWhatsAppLink } from '../utils/whatsapp';
+import { FiPhone } from 'react-icons/fi';
+
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -22,6 +26,7 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
 
   const { cart, addToCart: addToCartContext, getItemQuantityInCart } = useCart();
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -63,6 +68,10 @@ const ProductDetail = () => {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          // Fetch recommendations asynchronously
+          api.getSmartRecommendations(id).then(res => {
+            if (res.success && isMounted) setRecommendations(res.data);
+          }).catch(console.error);
         }
       }
     };
@@ -329,9 +338,21 @@ const ProductDetail = () => {
               <FiHeart
                 fill={isInWishlist(product?._id || product?.id) ? 'currentColor' : 'none'}
               />
-              <span>{isInWishlist(product?._id || product?.id) ? 'Saved to Wishlist' : 'Save to Wishlist'}</span>
+              <span>{isInWishlist(product?._id || product?.id) ? 'Saved' : 'Save'}</span>
             </button>
+
+            <a
+              href={getProductWhatsAppLink(product)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-whatsapp btn-full"
+              style={{ padding: '0.875rem' }}
+            >
+              <FiPhone />
+              <span>Enquire on WhatsApp</span>
+            </a>
           </div>
+
 
           {/* Product details */}
           <div className="product-meta">
@@ -381,6 +402,58 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Smart Recommendations Section */}
+      {recommendations.length > 0 && (
+        <div style={{ marginTop: '3rem', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
+            <FiPackage color="var(--primary)" size={24} />
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0 }}>Complete your comfort</h2>
+          </div>
+          <p style={{ color: 'var(--text-tertiary)', marginTop: '-1rem', marginBottom: '2rem' }}>
+            Customers who bought this mattress also loved these accessories:
+          </p>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+            gap: '1.5rem' 
+          }}>
+            {recommendations.map(rec => (
+              <div 
+                key={rec._id} 
+                className="card" 
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                  background: '#fff',
+                }}
+                onClick={() => {
+                  navigate(`/product/${rec._id}`);
+                  window.scrollTo(0, 0);
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ height: '160px', background: '#f8fafc', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ProductImage product={rec} style={{ maxHeight: '100%', maxWidth: '100%' }} />
+                </div>
+                <div style={{ padding: '1rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
+                    {rec.category.replace('-', ' ')}
+                  </div>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)', height: '2.4rem', overflow: 'hidden' }}>
+                    {rec.name}
+                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{formatPrice(rec.price)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--success-dark)', fontWeight: 600 }}>In Stock</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Reviews Section */}
       <div className="reviews-section">

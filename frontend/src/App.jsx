@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider } from './context/authContext';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/useAuth';
-import { CartProvider, useCart } from './context/cartContext';
-import { NotificationProvider, useNotification } from './context/notificationContext';
-import { CompareProvider, useCompare } from './context/compareContext';
-import { WishlistProvider } from './context/wishlistContext';
+import { useCart } from './context/cartContext';
+import { useNotification } from './context/notificationContext';
+import { useCompare } from './context/compareContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import NotificationToast from './components/NotificationToast';
@@ -24,12 +22,14 @@ import OrderManagement from './pages/OrderManagement';
 import UserManagement from './pages/UserManagement';
 import SalesAnalytics from './pages/SalesAnalytics';
 import Cart from './components/Cart';
+import CouponManagement from './pages/CouponManagement';
 import Wishlist from './pages/WishList';
 import ProductListing from './pages/ProductListing';
 import ComparePage from './pages/ComparePage';
-import Chatbot from './components/Chatbot';
 import SimpleChatbot from './components/SimpleChatbot';
 import SleepQuiz from './pages/SleepQuiz';
+import MattressCustomizer from './pages/MattressCustomizer';
+
 
 // Role selection component
 const RoleSelector = ({ onRoleSelect }) => {
@@ -105,6 +105,7 @@ const AdminLayout = ({ children }) => {
             <li><Link to="/admin/orders">Orders</Link></li>
             <li><Link to="/admin/users">Users</Link></li>
             <li><Link to="/admin/analytics">Sales Analytics</Link></li>
+            <li><Link to="/admin/coupons">Coupons</Link></li>
           </ul>
         </nav>
         <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -155,36 +156,28 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <CartProvider>
-          <CompareProvider>
-            <WishlistProvider>
-              <Router>
-                <div className="App">
-                  <AppContent selectedRole={selectedRole} />
-                </div>
-              </Router>
-            </WishlistProvider>
-          </CompareProvider>
-        </CartProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <Router>
+      <div className="App">
+        <AppContent selectedRole={selectedRole} />
+      </div>
+    </Router>
   );
 }
 
 function AppContent({ selectedRole }) {
   const { user, userRole } = useAuth();
+  const location = useLocation();
+  const isQuiz = location.pathname === '/quiz';
 
   return (
     <>
       {/* Connect notification system with cart */}
       <NotificationConnector />
 
-      {userRole !== 'admin' && <Header />}
+      {userRole !== 'admin' && !isQuiz && <Header />}
 
-      {/* Compare floating button - available on all user pages */}
-      {userRole !== 'admin' && <CompareFloatingButton />}
+      {/* Compare floating button - available on all user pages except quiz */}
+      {userRole !== 'admin' && !isQuiz && <CompareFloatingButton />}
 
       <Routes>
         {/* Public Routes */}
@@ -202,6 +195,8 @@ function AppContent({ selectedRole }) {
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/quiz" element={<SleepQuiz />} />
+            <Route path="/customize" element={<MattressCustomizer />} />
+
             <Route
               path="/checkout"
               element={
@@ -292,6 +287,16 @@ function AppContent({ selectedRole }) {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/coupons"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <CouponManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
           </>
         )}
 
@@ -299,7 +304,7 @@ function AppContent({ selectedRole }) {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {userRole !== 'admin' && <Footer />}
+      {userRole !== 'admin' && !isQuiz && <Footer />}
 
       {/* Chatbot - Available for all users */}
       {user && <SimpleChatbot />}

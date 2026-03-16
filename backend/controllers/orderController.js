@@ -6,10 +6,11 @@ const { calculateTotalTax } = require("../utils/taxCalculation");
 
 exports.createOrder = async (req, res) => {
   try {
-    const { products, shippingAddress, totalAmount, shipping, deliveryDetails } = req.body;
+    const { products, shippingAddress, coupon, totalAmount, subtotal, shipping, tax } = req.body;
 
-    // Validate products and calculate totals
-    let subtotal = 0;
+    // Validate products and calculate total
+    let calculatedTotal = 0;
+    let discountAmount = 0;
     const orderProducts = [];
 
     for (let item of products) {
@@ -33,27 +34,29 @@ exports.createOrder = async (req, res) => {
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: item.quantity,
-        category: product.category  // Include category for tax calculation
-      };
+        quantity: item.quantity
+      });
 
-      orderProducts.push(itemObject);
-
-      subtotal += product.price * item.quantity;
+      calculatedTotal += product.price * item.quantity;
 
       // Update product stock
       product.stock -= item.quantity;
       await product.save();
     }
 
-    // Calculate tax based on material categories
-    const tax = calculateTotalTax(orderProducts);
-    
-    // Use shipping provided from frontend (dynamic delivery charge), fallback to calculation if not provided
-    const shippingCost = shipping !== undefined ? shipping : (subtotal > 50 ? 0 : 9.99);
-    
-    // Calculate final total
-    const total = subtotal + tax + shippingCost;
+    // Use the provided totalAmount if available (which includes discount), otherwise use calculated
+    let finalTotal = calculatedTotal;
+    if (coupon && coupon.discountAmount) {
+      discountAmount = coupon.discountAmount;
+      // If totalAmount is provided, use it (as it's already calculated with discount)
+      if (totalAmount) {
+        finalTotal = totalAmount;
+      } else {
+        finalTotal = calculatedTotal - discountAmount;
+      }
+    } else if (totalAmount) {
+      finalTotal = totalAmount;
+    }
 
     const newOrder = new Order({
       user: req.user._id,
@@ -64,13 +67,19 @@ exports.createOrder = async (req, res) => {
         postalCode: "00000",
         country: "Default Country"
       },
-      subtotal: subtotal,
-      tax: tax,
-      shipping: shippingCost,
-      deliveryDetails: deliveryDetails || {},
-      total: total,
-      status: 'pending', // Cash on delivery orders start as pending
-      paymentMethod: 'cash_on_delivery'
+      total: finalTotal,
+      status: 'pending',
+      paymentMethod: req.body.paymentMethod === 'razorpay' ? 'online' : 'cash_on_delivery',
+      paymentStatus: req.body.paymentStatus || 'pending',
+      paymentDetails: req.body.paymentId || req.body.orderId ? {
+        paymentId: req.body.paymentId,
+        orderId: req.body.orderId,
+        status: req.body.paymentStatus || 'pending'
+      } : undefined,
+      coupon: coupon ? {
+        code: coupon.code,
+        discountAmount: coupon.discountAmount
+      } : undefined
     });
 
     await newOrder.save();
@@ -86,10 +95,8 @@ exports.createOrder = async (req, res) => {
         {
           orderId: newOrder._id.toString().slice(-8),
           orderDate: newOrder.createdAt,
-          subtotal: subtotal,
-          tax: tax,
-          shipping: shipping,
-          total: total,
+          total: finalTotal,
+          discount: discountAmount,
           items: orderProducts,
           shippingAddress: newOrder.shippingAddress
         }
