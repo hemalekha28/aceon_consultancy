@@ -2,13 +2,14 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } = require("../utils/emailService");
+const { calculateTotalTax } = require("../utils/taxCalculation");
 
 exports.createOrder = async (req, res) => {
   try {
-    const { products, shippingAddress } = req.body;
+    const { products, shippingAddress, totalAmount, shipping, deliveryDetails } = req.body;
 
-    // Validate products and calculate total
-    let total = 0;
+    // Validate products and calculate totals
+    let subtotal = 0;
     const orderProducts = [];
 
     for (let item of products) {
@@ -27,20 +28,32 @@ exports.createOrder = async (req, res) => {
         });
       }
 
-      orderProducts.push({
+      const itemObject = {
         product: product._id,
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: item.quantity
-      });
+        quantity: item.quantity,
+        category: product.category  // Include category for tax calculation
+      };
 
-      total += product.price * item.quantity;
+      orderProducts.push(itemObject);
+
+      subtotal += product.price * item.quantity;
 
       // Update product stock
       product.stock -= item.quantity;
       await product.save();
     }
+
+    // Calculate tax based on material categories
+    const tax = calculateTotalTax(orderProducts);
+    
+    // Use shipping provided from frontend (dynamic delivery charge), fallback to calculation if not provided
+    const shippingCost = shipping !== undefined ? shipping : (subtotal > 50 ? 0 : 9.99);
+    
+    // Calculate final total
+    const total = subtotal + tax + shippingCost;
 
     const newOrder = new Order({
       user: req.user._id,
@@ -51,6 +64,10 @@ exports.createOrder = async (req, res) => {
         postalCode: "00000",
         country: "Default Country"
       },
+      subtotal: subtotal,
+      tax: tax,
+      shipping: shippingCost,
+      deliveryDetails: deliveryDetails || {},
       total: total,
       status: 'pending', // Cash on delivery orders start as pending
       paymentMethod: 'cash_on_delivery'
@@ -69,6 +86,9 @@ exports.createOrder = async (req, res) => {
         {
           orderId: newOrder._id.toString().slice(-8),
           orderDate: newOrder.createdAt,
+          subtotal: subtotal,
+          tax: tax,
+          shipping: shipping,
           total: total,
           items: orderProducts,
           shippingAddress: newOrder.shippingAddress

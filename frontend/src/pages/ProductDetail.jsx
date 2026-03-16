@@ -281,6 +281,36 @@ const ProductDetail = () => {
             </button>
 
             <button
+              className="btn-customize"
+              onClick={() => navigate(`/customize/${product._id || product.id}`)}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.75rem 1.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              title="Customize size, color, material, and features"
+            >
+              ✨ Customize This Bed
+            </button>
+
+            <button
               className={`btn-wishlist ${isInWishlist(product?._id || product?.id) ? 'active' : ''}`}
               onClick={() => {
                 const pid = product?._id || product?.id;

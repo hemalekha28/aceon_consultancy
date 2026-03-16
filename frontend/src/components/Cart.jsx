@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMinus, FiPlus, FiTrash2, FiShoppingBag } from 'react-icons/fi';
+import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiAlertCircle } from 'react-icons/fi';
 import { useCart } from '../context/cartContext';
 import { useAuth } from '../context/useAuth';
 import { formatPrice } from '../utils/helpers';
+import { calculateTotalTax } from '../utils/taxCalculation';
 import Image from '../components/Image';
 import { constructImageUrl } from '../utils/imageUtils';
 
@@ -11,8 +12,37 @@ const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [productStocks, setProductStocks] = useState({});
+  const API_BASE = 'http://localhost:5000/api';
 
+  // Fetch product stocks when cart items change
+  useEffect(() => {
+    const fetchProductStocks = async () => {
+      const stocks = {};
+      
+      for (const item of cartItems) {
+        const productId = getProductId(item);
+        if (productId && !stocks[productId]) {
+          try {
+            const response = await fetch(`${API_BASE}/products/${productId}`);
+            if (response.ok) {
+              const result = await response.json();
+              stocks[productId] = result.data?.product?.stock || 0;
+            }
+          } catch (error) {
+            console.error('Error fetching stock for product:', productId, error);
+            stocks[productId] = 0;
+          }
+        }
+      }
+      
+      setProductStocks(stocks);
+    };
 
+    if (cartItems.length > 0) {
+      fetchProductStocks();
+    }
+  }, [cartItems]);
 
   // Helper function to get consistent product ID
   const getProductId = (item) => {
@@ -125,7 +155,7 @@ const Cart = () => {
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08; // 8% tax
+  const tax = calculateTotalTax(cartItems); // Tax based on material types
   const total = subtotal + shipping + tax;
 
   return (
@@ -271,6 +301,31 @@ const Cart = () => {
                       <p style={{ fontSize: '0.875rem', color: '#737373', margin: '0.25rem 0' }}>
                         Category: {item.category}
                       </p>
+                      {productStocks[getProductId(item)] !== undefined && (
+                        <p style={{
+                          fontSize: '0.75rem',
+                          margin: '0.5rem 0 0 0',
+                          color: productStocks[getProductId(item)] <= 0 ? '#dc2626' : productStocks[getProductId(item)] === 1 ? '#f59e0b' : '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          fontWeight: 500
+                        }}>
+                          {productStocks[getProductId(item)] <= 0 ? (
+                            <>
+                              <FiAlertCircle size={12} />
+                              Out of Stock
+                            </>
+                          ) : productStocks[getProductId(item)] === 1 ? (
+                            <>
+                              <FiAlertCircle size={12} />
+                              Only 1 left
+                            </>
+                          ) : (
+                            <>{productStocks[getProductId(item)]} in stock</>
+                          )}
+                        </p>
+                      )}
                       <div className="cart-item-price" style={{
                         background: 'var(--gradient-blue-dark)',
                         WebkitBackgroundClip: 'text',
@@ -320,8 +375,9 @@ const Cart = () => {
                       <input
                         type="number"
                         min="1"
+                        max={productStocks[getProductId(item)] || 1}
                         value={item.quantity}
-                        onChange={(e) => handleQuantityChange(item, parseInt(e.target.value) || 1)}
+                        onChange={(e) => handleQuantityChange(item, Math.min(parseInt(e.target.value) || 1, productStocks[getProductId(item)] || 1))}
                         className="quantity-input"
                         style={{
                           width: '60px',
@@ -335,7 +391,14 @@ const Cart = () => {
 
                       <button
                         className="quantity-btn"
-                        onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                        onClick={() => {
+                          const productId = getProductId(item);
+                          const maxStock = productStocks[productId] || 1;
+                          if (item.quantity < maxStock) {
+                            handleQuantityChange(item, item.quantity + 1);
+                          }
+                        }}
+                        disabled={item.quantity >= (productStocks[getProductId(item)] || 0)}
                         style={{
                           width: '32px',
                           height: '32px',

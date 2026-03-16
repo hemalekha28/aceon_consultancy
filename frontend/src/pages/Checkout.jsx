@@ -5,7 +5,10 @@ import { useCart } from '../context/cartContext';
 import { useAuth } from '../context/useAuth';
 import { api } from '../utils/api';
 import { formatPrice } from '../utils/helpers';
+import { calculateTotalTax } from '../utils/taxCalculation';
+import { getDeliveryCharge, getDeliveryEstimate } from '../utils/deliveryCalculation';
 import Image from '../components/Image';
+import DeliveryLocationMap from '../components/DeliveryLocationMap';
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -49,14 +52,42 @@ const Checkout = () => {
     }));
   };
 
-  // Calculate totals
+  // State for delivery address with coordinates (lat/lng)
+  const [deliveryAddress, setDeliveryAddress] = useState(null);
+
+  // Calculate totals with dynamic delivery charges
   const subtotal = isBuyNow
     ? (buyNowItem.price * buyNowItem.quantity)
     : getCartTotal();
 
-  const shipping = formData.shippingMethod === 'express' ? 19.99 : subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  // Calculate delivery charge based on distance
+  let deliveryCharge = 0;
+  let deliveryDetails = { charges: 0, breakdown: { base: 0, distance: 0, special: 0 }, range: 'Unknown' };
+  let deliveryEstimate = '📦 Delivery estimate TBD';
+
+  if (deliveryAddress && deliveryAddress.lat && deliveryAddress.lng) {
+    // Calculate based on actual distance
+    const isExpress = formData.shippingMethod === 'express';
+    deliveryDetails = getDeliveryCharge(deliveryAddress, {
+      isExpress: isExpress,
+      isNightDelivery: false,
+      isRemoteArea: false
+    });
+    deliveryCharge = deliveryDetails.charges;
+    deliveryEstimate = getDeliveryEstimate(deliveryDetails.distance);
+  } else {
+    // Default charges until address is selected
+    if (formData.shippingMethod === 'express') {
+      deliveryCharge = 299;
+    } else {
+      deliveryCharge = subtotal > 5000 ? 0 : 99;
+    }
+  }
+
+  const tax = isBuyNow 
+    ? calculateTotalTax([buyNowItem]) 
+    : calculateTotalTax(checkoutItems); // Tax based on material and size
+  const total = subtotal + deliveryCharge + tax;
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -157,7 +188,13 @@ const Checkout = () => {
           address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
           city: formData.city,
           postalCode: formData.zipCode,
-          country: formData.country
+          country: formData.country,
+          ...(deliveryAddress && {
+            coordinates: {
+              latitude: deliveryAddress.lat,
+              longitude: deliveryAddress.lng
+            }
+          })
         },
         totalAmount: total
       };
@@ -180,8 +217,20 @@ const Checkout = () => {
     } catch (error) {
       console.error('Order creation failed:', error);
       setLoading(false);
-      alert('Payment was successful but there was an issue creating your order. Please contact support with payment ID: ' +
-        (paymentResponse.razorpay_payment_id || 'N/A'));
+      
+      // Handle specific error messages for stock issues
+      let errorMessage = 'Payment was successful but there was an issue creating your order. Please contact support with payment ID: ' + (paymentResponse.razorpay_payment_id || 'N/A');
+      
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData.message && errorData.message.includes('Insufficient stock')) {
+          errorMessage = 'One or more items in your order are out of stock. Payment has been processed. Please contact support with your payment ID for a refund: ' + (paymentResponse.razorpay_payment_id || 'N/A');
+        } else if (errorData.message) {
+          errorMessage = errorData.message + '. Payment ID: ' + (paymentResponse.razorpay_payment_id || 'N/A');
+        }
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -192,6 +241,48 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Client-side validation
+    const validationErrors = [];
+
+    // Check required fields
+    if (!formData.firstName?.trim()) validationErrors.push('First name is required');
+    if (!formData.lastName?.trim()) validationErrors.push('Last name is required');
+    if (!formData.email?.trim()) validationErrors.push('Email is required');
+    if (!formData.phone?.trim()) validationErrors.push('Phone number is required');
+    if (!formData.address?.trim()) validationErrors.push('Address is required');
+    if (!formData.city?.trim()) validationErrors.push('City is required');
+    if (!formData.state?.trim()) validationErrors.push('State is required');
+    if (!formData.zipCode?.trim()) validationErrors.push('Postal code is required');
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      validationErrors.push('Please enter a valid email address');
+    }
+
+    // Validate phone (basic check for 10+ digits)
+    const phoneRegex = /^\d{10,}$/;
+    if (formData.phone && !phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
+      validationErrors.push('Please enter a valid phone number (at least 10 digits)');
+    }
+
+    // Check if user is logged in
+    if (!user || !user._id) {
+      validationErrors.push('You must be logged in to place an order. Please login and try again.');
+    }
+
+    // Check if cart has items
+    if (!checkoutItems || checkoutItems.length === 0) {
+      validationErrors.push('Your cart is empty. Please add items before checkout.');
+    }
+
+    // Show validation errors
+    if (validationErrors.length > 0) {
+      alert('Please fix the following issues:\n\n' + validationErrors.join('\n'));
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -208,17 +299,28 @@ const Checkout = () => {
             name: item.name,
             image: item.image
           })),
-          paymentMethod: 'cod',
+          paymentMethod: 'cash_on_delivery',
           paymentStatus: 'pending',
           shippingAddress: {
             address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
             city: formData.city,
             postalCode: formData.zipCode,
-            country: formData.country
+            country: formData.country,
+            ...(deliveryAddress && {
+              coordinates: {
+                latitude: deliveryAddress.lat,
+                longitude: deliveryAddress.lng
+              }
+            })
           },
-          totalAmount: total
+          subtotal: subtotal,
+          tax: tax,
+          shipping: deliveryCharge,
+          deliveryDetails: deliveryDetails,
+          total: total
         };
 
+        console.log('Submitting COD order data:', orderData);
         const response = await api.createOrder(orderData);
         console.log('COD Order created:', response);
         if (!isBuyNow) {
@@ -229,7 +331,27 @@ const Checkout = () => {
       // For Razorpay, the payment flow is handled by the RazorpayButton component
     } catch (error) {
       console.error('Order creation failed:', error);
-      alert('There was an issue creating your order. Please try again.');
+      console.error('Error response:', error.response?.data);
+      
+      // Handle specific error messages
+      let errorMessage = 'There was an issue creating your order. Please try again.';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please login again and try.';
+      } else if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData.message && errorData.message.includes('Insufficient stock')) {
+          errorMessage = 'One or more items in your order are out of stock. Please update your cart and try again.';
+        } else if (errorData.message && errorData.message.includes('Product not found')) {
+          errorMessage = 'One or more products in your cart are no longer available. Please update your cart and try again.';
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } else if (error.message) {
+        errorMessage = `Order error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -456,6 +578,7 @@ const Checkout = () => {
                     className="form-input"
                     value={formData.address}
                     onChange={handleInputChange}
+                    placeholder="Enter your street address"
                     required
                   />
                 </div>
@@ -521,6 +644,29 @@ const Checkout = () => {
                     </label>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Delivery Location Map */}
+            <div className="card" style={{
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div className="card-header" style={{
+                background: 'var(--gradient-blue-medium)',
+                color: 'white',
+                borderBottom: 'none'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>🗺️</span>
+                  <h3 style={{ margin: 0, color: 'white' }}>Delivery Location</h3>
+                </div>
+              </div>
+              <div className="card-body">
+                <DeliveryLocationMap
+                  onLocationSelect={(location) => setDeliveryAddress(location)}
+                  initialLocation={deliveryAddress}
+                />
               </div>
             </div>
 
@@ -759,9 +905,15 @@ const Checkout = () => {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Shipping:</span>
-                    <span>{formatPrice(shipping)}</span>
+                    <span>Delivery Charge:</span>
+                    <span>{formatPrice(deliveryCharge)}</span>
                   </div>
+                  {deliveryDetails && (
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', paddingLeft: '0.5rem' }}>
+                      <div>{deliveryDetails.baseCharge ? `Base: ${formatPrice(deliveryDetails.baseCharge)}` : ''}</div>
+                      <div>{deliveryDetails.distanceCharge ? `Distance: ${formatPrice(deliveryDetails.distanceCharge)} (${deliveryDetails.distance?.toFixed(1)}km)` : ''}</div>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Tax:</span>

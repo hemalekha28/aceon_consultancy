@@ -19,6 +19,10 @@ const orderSchema = new mongoose.Schema({
       type: Number, 
       required: true,
       min: [1, 'Quantity must be at least 1']
+    },
+    category: { 
+      type: String, 
+      enum: ['latex', 'coir', 'memory-foam', 'softy-foam', 'spring']
     }
   }],
   shippingAddress: {
@@ -26,6 +30,29 @@ const orderSchema = new mongoose.Schema({
     city: { type: String, required: true },
     postalCode: { type: String, required: true },
     country: { type: String, required: true }
+  },
+  subtotal: {
+    type: Number,
+    required: true,
+    min: [0, 'Subtotal cannot be negative']
+  },
+  tax: {
+    type: Number,
+    required: true,
+    min: [0, 'Tax cannot be negative'],
+    default: 0
+  },
+  shipping: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: [0, 'Shipping cost cannot be negative']
+  },
+  deliveryDetails: {
+    baseCharge: { type: Number, default: 0 },
+    distanceCharge: { type: Number, default: 0 },
+    distance: { type: Number },
+    estimatedDays: { type: Number }
   },
   total: {
     type: Number,
@@ -93,5 +120,7 @@ const orderSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+module.exports = mongoose.model('Order', orderSchema);
 
 module.exports = mongoose.model('Order', orderSchema);

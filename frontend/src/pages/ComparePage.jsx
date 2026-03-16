@@ -250,15 +250,20 @@ const ComparePage = () => {
             {compareItems.map((product) => (
               <div key={product._id} className="compare-cell">
                 <span className={`compare-stock ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                  {product.stock > 0 ? (
-                    <>
-                      <FiCheck size={16} />
-                      In Stock ({product.stock})
-                    </>
-                  ) : (
+                  {product.stock <= 0 ? (
                     <>
                       <FiAlertCircle size={16} />
                       Out of Stock
+                    </>
+                  ) : product.stock === 1 ? (
+                    <>
+                      <FiAlertCircle size={16} />
+                      Only One Left
+                    </>
+                  ) : (
+                    <>
+                      <FiCheck size={16} />
+                      In Stock ({product.stock})
                     </>
                   )}
                 </span>

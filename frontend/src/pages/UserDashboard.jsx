@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar } from 'react-icons/fi';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { useAuth } from '../context/useAuth';
@@ -17,6 +17,7 @@ const UserDashboard = () => {
   const { user, updateProfile, setUser } = useAuth();
   const { getCartItemsCount } = useCart();
   const { wishlist } = useWishlist();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -984,123 +985,166 @@ const UserDashboard = () => {
               </Link>
             </div>
           ) : (
-            <div className="table-container" style={{ overflowX: 'auto' }}>
-              <table className="table" style={{
-                width: '100%',
-                borderCollapse: 'separate',
-                borderSpacing: '0'
-              }}>
-                <thead>
-                  <tr style={{
-                    background: 'var(--gradient-blue-light)',
-                    borderBottom: '2px solid var(--border-light)'
+            <div style={{ display: 'grid', gap: '1.5rem' }}>
+              {orders.map((order) => {
+                const statusSteps = ['pending', 'processing', 'shipped', 'delivered'];
+                const currentStatusIndex = statusSteps.indexOf(order.status);
+                
+                return (
+                  <div key={order._id} className="card" style={{
+                    padding: '1.5rem',
+                    border: '1px solid #e5e7eb',
+                    background: 'var(--bg-primary)',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                   }}>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Order ID</th>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Date</th>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Items</th>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Total</th>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Status</th>
-                    <th style={{
-                      padding: '1rem',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order, index) => (
-                    <tr
-                      key={order.id}
-                      style={{
-                        borderBottom: '1px solid var(--border-light)',
-                        transition: 'var(--transition-base)',
-                        background: index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--gray-100)';
-                        e.currentTarget.style.transform = 'scale(1.01)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>#{order.id}</td>
-                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{formatDate(order.date)}</td>
-                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{order.items.length} item(s)</td>
-                      <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--secondary)', fontSize: '1.1rem' }}>{formatPrice(order.total)}</td>
-                      <td style={{ padding: '1rem' }}>
-                        <span className={`badge badge-${getStatusColor(order.status)}`} style={{
-                          padding: '0.375rem 0.75rem',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          textTransform: 'capitalize'
-                        }}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '1rem' }}>
-                        <button className="btn btn-sm btn-secondary" style={{
+                    {/* Order Header */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '2rem', marginBottom: '1.5rem', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Order Number</p>
+                        <h4 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600' }}>#{order._id?.toString().slice(-8) || order.id}</h4>
+                      </div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Date</p>
+                        <p style={{ margin: 0, fontSize: '1rem' }}>{formatDate(order.date)}</p>
+                      </div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Amount</p>
+                        <p style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600', color: 'var(--secondary)' }}>{formatPrice(order.total)}</p>
+                      </div>
+                      <button 
+                        className="btn btn-sm btn-secondary" 
+                        onClick={() => navigate(`/order/${order._id}`)}
+                        style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
                           padding: '0.5rem 1rem',
                           borderRadius: '8px',
-                          transition: 'all 0.2s ease'
-                        }}>
-                          <FiEye size={14} />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <FiEye size={14} />
+                        View
+                      </button>
+                    </div>
+
+                    {/* Status Timeline */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      position: 'relative',
+                      padding: '1.5rem 0'
+                    }}>
+                      {/* Background Line */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        background: '#e5e7eb',
+                        transform: 'translateY(-50%)',
+                        zIndex: 0
+                      }} />
+
+                      {/* Completed Line */}
+                      {currentStatusIndex >= 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: 0,
+                          width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%`,
+                          height: '3px',
+                          background: 'linear-gradient(to right, #10b981, #06b6d4)',
+                          transform: 'translateY(-50%)',
+                          zIndex: 1,
+                          transition: 'width 0.3s ease'
+                        }} />
+                      )}
+
+                      {/* Status Steps */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        position: 'relative',
+                        zIndex: 2
+                      }}>
+                        {statusSteps.map((status, index) => {
+                          const isCompleted = index <= currentStatusIndex;
+                          const statusLabels = {
+                            'pending': { label: 'Pending', icon: '📦' },
+                            'processing': { label: 'Processing', icon: '⚙️' },
+                            'shipped': { label: 'Shipped', icon: '🚚' },
+                            'delivered': { label: 'Delivered', icon: '✅' }
+                          };
+                          
+                          return (
+                            <div key={status} style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              flex: 1
+                            }}>
+                              <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                background: isCompleted ? 'var(--secondary)' : '#f3f4f6',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: isCompleted ? 'white' : '#9ca3af',
+                                fontSize: '1.25rem',
+                                fontWeight: '600',
+                                marginBottom: '0.5rem',
+                                border: order.status === status ? '2px solid var(--secondary)' : 'none',
+                                boxShadow: order.status === status ? '0 0 0 3px rgba(99, 102, 241, 0.1)' : 'none',
+                                transition: 'all 0.3s ease'
+                              }}>
+                                {statusLabels[status].icon}
+                              </div>
+                              <p style={{
+                                margin: 0,
+                                fontSize: '0.875rem',
+                                fontWeight: isCompleted ? '600' : '500',
+                                color: isCompleted ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                textAlign: 'center'
+                              }}>
+                                {statusLabels[status].label}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Items Count */}
+                    <div style={{
+                      paddingTop: '1rem',
+                      borderTop: '1px solid #e5e7eb',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.875rem',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <span>{order.items?.length || 0} item(s)</span>
+                      <span className={`badge badge-${getStatusColor(order.status)}`} style={{
+                        padding: '0.375rem 0.75rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        textTransform: 'capitalize'
+                      }}>
+                        {order.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

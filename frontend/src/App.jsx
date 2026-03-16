@@ -12,9 +12,11 @@ import NotificationToast from './components/NotificationToast';
 import CompareFloatingButton from './components/CompareFloatingButton';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
+import BedCustomizationPage from './pages/BedCustomizationPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Checkout from './pages/Checkout';
+import OrderTracking from './pages/OrderTracking';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
@@ -195,6 +197,7 @@ function AppContent({ selectedRole }) {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<ProductListing />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/customize/:id" element={<BedCustomizationPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
@@ -212,6 +215,14 @@ function AppContent({ selectedRole }) {
               element={
                 <ProtectedRoute>
                   <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order/:orderId"
+              element={
+                <ProtectedRoute>
+                  <OrderTracking />
                 </ProtectedRoute>
               }
             />

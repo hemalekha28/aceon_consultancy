@@ -45,6 +45,20 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Helper function to fetch product stock
+  const getProductStock = async (productId) => {
+    try {
+      const result = await apiCall(`/products/${productId}`);
+      if (result.success && result.data) {
+        return result.data.stock || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error fetching product stock:', error);
+      return 0;
+    }
+  };
+
   // Load cart from database when user logs in
   const loadCartFromDB = async () => {
     if (!user || !token) return;
@@ -180,6 +194,18 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
+    // Check if product is in stock
+    const productStock = product.stock || 0;
+    if (productStock <= 0) {
+      showNotification('This product is out of stock', 'error');
+      return;
+    }
+
+    if (productStock < quantity) {
+      showNotification(`Only ${productStock} ${productStock === 1 ? 'item' : 'items'} available in stock`, 'error');
+      return;
+    }
+
     if (user && token) {
       // User logged in - add to database
       setIsLoading(true);
@@ -295,6 +321,20 @@ export const CartProvider = ({ children }) => {
       setIsLoading(true);
       try {
         console.log('Updating cart item:', productId, 'to quantity:', newQuantity);
+
+        // Fetch current product stock before updating
+        const productStock = await getProductStock(productId);
+        
+        if (productStock <= 0) {
+          showNotification('This product is out of stock', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        if (newQuantity > productStock) {
+          showNotification(`Only ${productStock} ${productStock === 1 ? 'item' : 'items'} available in stock. ${productStock === 1 ? 'It' : 'They'} will be added to your cart.`, 'warning');
+          newQuantity = productStock;
+        }
 
         const result = await apiCall(`/cart/update/${productId}`, {
           method: 'PUT',

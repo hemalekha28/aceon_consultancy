@@ -345,64 +345,107 @@ const AdminDashboard = () => {
 
 
   return (
-    <div className="container" style={{ padding: '2rem 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ margin: 0 }}>Admin Dashboard</h1>
+    <div style={{ 
+      background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+      minHeight: '100vh',
+      padding: '2rem 0'
+    }}>
+      <div className="container" style={{ padding: '0 2rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2rem',
+        background: 'white',
+        padding: '2rem',
+        borderRadius: '12px',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)'
+      }}>
+        <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: '700', background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Admin Dashboard</h1>
       </div>
 
       {/* Overview Stats */}
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>
-        <div className="stat-card">
+        <div className="stat-card" style={{ background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #0ea5e9' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <FiPackage size={32} color="var(--primary)" />
+            <FiPackage size={32} color="#0ea5e9" />
           </div>
-          <span className="stat-number">{analytics.totalProducts || 0}</span>
+          <span className="stat-number" style={{ color: '#0ea5e9' }}>{analytics.totalProducts || 0}</span>
           <span className="stat-label">Total Products</span>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card" style={{ background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #06b6d4' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <FiShoppingCart size={32} color="var(--success)" />
+            <FiShoppingCart size={32} color="#06b6d4" />
           </div>
-          <span className="stat-number">{analytics.totalOrders || 0}</span>
+          <span className="stat-number" style={{ color: '#06b6d4' }}>{analytics.totalOrders || 0}</span>
           <span className="stat-label">Total Orders</span>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card" style={{ background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #14b8a6' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <FiUsers size={32} color="var(--danger)" />
+            <FiUsers size={32} color="#14b8a6" />
           </div>
-          <span className="stat-number">{analytics.totalUsers || 0}</span>
+          <span className="stat-number" style={{ color: '#14b8a6' }}>{analytics.totalUsers || 0}</span>
           <span className="stat-label">Total Users</span>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card" style={{ background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', borderLeft: '4px solid #36d1c4' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <FiDollarSign size={32} color="var(--accent)" />
+            <FiDollarSign size={32} color="#36d1c4" />
           </div>
-          <span className="stat-number">{formatPrice(analytics.totalRevenue || 0)}</span>
-          <span className="stat-label">Total Revenue</span>
+          <span className="stat-number" style={{ color: '#36d1c4' }}>{formatPrice(analytics.totalRevenue || 0)}</span>
+          <span className="stat-label" style={{ color: '#36d1c4' }}>Total Revenue</span>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <div className="card-header">
+      <div className="card" style={{ marginBottom: '2rem', background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+        <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>Quick Actions</h3>
+            <h3 style={{ color: 'white', margin: 0 }}>Quick Actions</h3>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button
                 onClick={downloadExcelReport}
-                className="btn btn-sm btn-success"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.3s',
+                  boxShadow: '0 2px 8px rgba(14, 165, 233, 0.2)'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(14, 165, 233, 0.3)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(14, 165, 233, 0.2)'; }}
               >
                 <FiDownload size={16} />
                 Download Report
               </button>
               <button
                 onClick={loadAnalytics}
-                className="btn btn-sm btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: '#f0f9ff',
+                  color: '#0ea5e9',
+                  border: '2px solid #0ea5e9',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.3s'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#e0f2fe'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f0f9ff'; }}
               >
                 <FiRefreshCw size={16} />
                 Refresh
@@ -412,36 +455,75 @@ const AdminDashboard = () => {
         </div>
         <div className="card-body">
           <div className="grid grid-3" style={{ gap: '1.5rem' }}>
-            <Link to="/admin/products" className="btn btn-primary" style={{
+            <Link to="/admin/products" style={{
               padding: '2rem 1rem',
               flexDirection: 'column',
               height: 'auto',
               borderRadius: '16px',
-              transition: 'all 0.3s ease'
-            }}>
-              <FiPackage size={32} style={{ marginBottom: '0.5rem' }} />
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+              color: 'white',
+              textDecoration: 'none',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(54, 209, 196, 0.3)',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(14, 165, 233, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(14, 165, 233, 0.3)'; }}
+            >
+              <FiPackage size={32} style={{ marginBottom: '0.5rem', color: 'white' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Products</span>
             </Link>
 
-            <Link to="/admin/orders" className="btn btn-secondary" style={{
+            <Link to="/admin/orders" style={{
               padding: '2rem 1rem',
               flexDirection: 'column',
               height: 'auto',
               borderRadius: '16px',
-              transition: 'all 0.3s ease'
-            }}>
-              <FiShoppingCart size={32} style={{ marginBottom: '0.5rem' }} />
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+              color: 'white',
+              textDecoration: 'none',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(54, 209, 196, 0.3)',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(6, 182, 212, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)'; }}
+            >
+              <FiShoppingCart size={32} style={{ marginBottom: '0.5rem', color: 'white' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Orders</span>
             </Link>
 
-            <Link to="/admin/users" className="btn btn-success" style={{
+            <Link to="/admin/users" style={{
               padding: '2rem 1rem',
               flexDirection: 'column',
               height: 'auto',
               borderRadius: '16px',
-              transition: 'all 0.3s ease'
-            }}>
-              <FiUsers size={32} style={{ marginBottom: '0.5rem' }} />
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)',
+              color: 'white',
+              textDecoration: 'none',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(54, 209, 196, 0.3)',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(20, 184, 166, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(20, 184, 166, 0.3)'; }}
+            >
+              <FiUsers size={32} style={{ marginBottom: '0.5rem', color: 'white' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Users</span>
             </Link>
           </div>
@@ -451,10 +533,10 @@ const AdminDashboard = () => {
       {/* Charts Section */}
       <div className="grid grid-2" style={{ gap: '2rem', marginBottom: '2rem' }}>
         {/* Sales Chart */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card" style={{ background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+          <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Sales Analysis</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Sales Analysis</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
                   onClick={() => setChartType('line')}
@@ -489,16 +571,16 @@ const AdminDashboard = () => {
                         {
                           label: 'Sales Revenue',
                           data: salesByMonth.map(item => item.sales),
-                          borderColor: 'var(--primary)',
-                          backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                          borderColor: '#0ea5e9',
+                          backgroundColor: 'rgba(14, 165, 233, 0.1)',
                           tension: 0.1,
                           fill: true,
                         },
                         salesByMonth[0] && salesByMonth[0].orders !== undefined ? {
                           label: 'Total Orders',
                           data: salesByMonth.map(item => item.orders),
-                          borderColor: '#10b981',  // Emerald-500 (secondary)
-                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                          borderColor: '#06b6d4',
+                          backgroundColor: 'rgba(6, 182, 212, 0.1)',
                           tension: 0.1,
                           fill: true,
                         } : null,
@@ -543,15 +625,15 @@ const AdminDashboard = () => {
                         {
                           label: 'Sales Revenue',
                           data: salesByMonth.map(item => item.sales),
-                          backgroundColor: 'var(--primary)',
-                          borderColor: 'var(--primary)',
+                          backgroundColor: '#0ea5e9',
+                          borderColor: '#0ea5e9',
                           borderWidth: 1,
                         },
                         salesByMonth[0] && salesByMonth[0].orders !== undefined ? {
                           label: 'Total Orders',
                           data: salesByMonth.map(item => item.orders),
-                          backgroundColor: '#10b981',  // Emerald-500 (secondary)
-                          borderColor: '#10b981',
+                          backgroundColor: '#06b6d4',
+                          borderColor: '#06b6d4',
                           borderWidth: 1,
                         } : null,
                       ].filter(Boolean),
@@ -601,9 +683,9 @@ const AdminDashboard = () => {
         </div>
 
         {/* Category Distribution */}
-        <div className="card">
-          <div className="card-header">
-            <h3>Sales by Category</h3>
+        <div className="card" style={{ background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+          <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
+            <h3 style={{ color: 'white', margin: 0 }}>Sales by Category</h3>
           </div>
           <div className="card-body">
             {salesByCategory.length > 0 ? (
@@ -619,12 +701,12 @@ const AdminDashboard = () => {
                       {
                         data: salesByCategory.map(item => item.value),
                         backgroundColor: [
-                          '#1e3a8a',  // var(--primary)
-                          '#3b82f6',  // var(--primary-light)
-                          '#60a5fa',  // Sky-400
-                          '#93c5fd',  // var(--primary-lighter)
-                          '#2563eb',  // Blue-600
-                          '#1d4ed8',  // Blue-700
+                          '#0ea5e9',  // Sky blue
+                          '#06b6d4',  // Cyan
+                          '#14b8a6',  // Teal
+                          '#0369a1',  // Sky blue darker
+                          '#0891b2',  // Cyan darker
+                          '#0d9488',  // Teal darker
                         ],
                         borderColor: '#ffffff',  // White borders for clean separation
                         borderWidth: 3,
@@ -696,10 +778,10 @@ const AdminDashboard = () => {
 
       <div className="grid grid-2" style={{ gap: '2rem' }}>
         {/* Recent Orders */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card" style={{ background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+          <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Recent Orders</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Recent Orders</h3>
               <Link to="/admin/orders" className="btn btn-sm btn-secondary">
                 View All
               </Link>
@@ -748,10 +830,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Top Products */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card" style={{ background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+          <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Top Rated Products</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Top Rated Products</h3>
               <Link to="/admin/products" className="btn btn-sm btn-secondary">
                 View All
               </Link>
@@ -828,10 +910,10 @@ const AdminDashboard = () => {
 
       {/* User Statistics Section */}
       {analytics.userStats && analytics.userStats.length > 0 && (
-        <div className="card" style={{ marginTop: '2rem' }}>
-          <div className="card-header">
+        <div className="card" style={{ marginTop: '2rem', background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
+          <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Top Users by Spending</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Top Users by Spending</h3>
               <Link to="/admin/users" className="btn btn-sm btn-secondary">
                 View All Users
               </Link>
@@ -896,6 +978,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

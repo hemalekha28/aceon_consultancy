@@ -12,6 +12,7 @@ const OrderManagement = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     loadOrders();
@@ -43,15 +44,42 @@ const OrderManagement = () => {
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
-    if (window.confirm(`Are you sure you want to change the order status to "${newStatus}"?`)) {
+    const currentOrder = orders.find(o => o._id === orderId || o.id === orderId);
+    const oldStatus = currentOrder?.status;
+    
+    if (window.confirm(`Are you sure you want to change the order status from "${oldStatus}" to "${newStatus}"?`)) {
       try {
         setError(null);
-        await api.updateOrderStatus(orderId, newStatus);
+        setSuccess(null);
+        
+        // Optimistically update the UI
+        const updatedOrders = orders.map(order => 
+          (order._id === orderId || order.id === orderId) 
+            ? { ...order, status: newStatus }
+            : order
+        );
+        setOrders(updatedOrders);
+        
+        // Make the API call
+        const response = await api.updateOrderStatus(orderId, newStatus);
+        console.log('Status update response:', response);
+        
+        // Show success message
+        setSuccess(`Order status updated from "${oldStatus}" to "${newStatus}". User has been notified via email.`);
+        setTimeout(() => setSuccess(null), 5000);
+        
+        // Refresh the full orders list to ensure consistency
         await loadOrders(true);
-        alert('Order status updated successfully!');
+        
+        // Also update selected order if it's open
+        if (selectedOrder && (selectedOrder._id === orderId || selectedOrder.id === orderId)) {
+          setSelectedOrder(prev => ({ ...prev, status: newStatus }));
+        }
       } catch (error) {
         console.error('Error updating order status:', error);
         setError(error.message || 'Error updating order status. Please try again.');
+        // Reload orders to revert to actual state
+        await loadOrders(true);
       }
     }
   };
@@ -136,6 +164,21 @@ const OrderManagement = () => {
           <button
             onClick={() => setError(null)}
             className="btn btn-sm btn-link"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {success && (
+        <div className="alert alert-success" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', backgroundColor: '#d4edda', color: '#155724', border: '1px solid #c3e6cb' }}>
+          <FiCheckCircle style={{ marginRight: '0.5rem', flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>{success}</span>
+          <button
+            onClick={() => setSuccess(null)}
+            className="btn btn-sm btn-link"
+            style={{ color: '#155724' }}
           >
             Dismiss
           </button>
@@ -382,18 +425,25 @@ const OrderManagement = () => {
               <button onClick={() => setShowModal(false)} className="btn btn-secondary">
                 Close
               </button>
-              <button
-                onClick={() => {
-                  const newStatus = prompt('Enter new status (pending, processing, shipped, delivered, cancelled):');
-                  if (newStatus && ['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(newStatus)) {
-                    handleStatusUpdate(selectedOrder.id || selectedOrder._id, newStatus);
-                    setShowModal(false);
-                  }
-                }}
-                className="btn btn-primary"
-              >
-                Update Status
-              </button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <select
+                  className="form-select"
+                  defaultValue={selectedOrder.status}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    if (newStatus && newStatus !== selectedOrder.status) {
+                      handleStatusUpdate(selectedOrder.id || selectedOrder._id, newStatus);
+                      setShowModal(false);
+                    }
+                  }}
+                  style={{ padding: '0.5rem', borderRadius: '6px' }}
+                >
+                  <option value={selectedOrder.status}>Current: {selectedOrder.status}</option>
+                  {getStatusOptions(selectedOrder.status).map(status => (
+                    <option key={status} value={status}>Change to: {status}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>

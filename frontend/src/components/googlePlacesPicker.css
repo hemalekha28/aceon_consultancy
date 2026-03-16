@@ -1,0 +1,136 @@
+/* Location Picker Styles (for Nominatim/OpenStreetMap) */
+
+.places-container {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.places-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.places-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.places-input::placeholder {
+  color: #9ca3af;
+}
+
+.location-btn {
+  padding: 0.75rem 1rem;
+  background-color: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+}
+
+.location-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  transform: scale(1.05);
+}
+
+.location-btn:active {
+  transform: scale(0.95);
+}
+
+.places-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.place-item {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.place-item:last-child {
+  border-bottom: none;
+}
+
+.place-item:hover {
+  background-color: #f9fafb;
+  padding-left: 1.25rem;
+}
+
+.place-item div {
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.place-item small {
+  color: #6b7280;
+  font-size: 0.875rem;
+  display: block;
+}
+
+.loading {
+  padding: 1rem;
+  text-align: center;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* Scrollbar styling */
+.places-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.places-dropdown::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.places-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.places-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .places-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .places-dropdown {
+    max-height: 250px;
+  }
+}

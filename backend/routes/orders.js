@@ -145,8 +145,10 @@ router.put('/:id/status', protect, [
     order.updatedAt = new Date();
     await order.save();
 
-    // Send email notification for status updates (except for pending status)
-    if (status !== 'pending' && order.user && order.user.email) {
+    console.log(`Order ${req.params.id} status updated from ${oldStatus} to ${status}`);
+
+    // Send email notification for all status updates (notify user of changes)
+    if (order.user && order.user.email) {
       try {
         const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
         await sendOrderStatusUpdateEmail(
@@ -155,10 +157,12 @@ router.put('/:id/status', protect, [
           {
             orderId: order._id.toString().slice(-8),
             total: order.total,
-            shippingAddress: order.shippingAddress
+            shippingAddress: order.shippingAddress,
+            previousStatus: oldStatus
           },
           status
         );
+        console.log(`Status update email sent to ${order.user.email} for order ${req.params.id}`);
       } catch (emailError) {
         console.error('Failed to send status update email:', emailError);
         // Don't fail the status update if email fails
@@ -322,8 +326,13 @@ router.post('/', protect, [
       user: req.user._id,
       products: orderProducts,
       shippingAddress,
-      total,
-      status: 'pending' // Set default status
+      subtotal: total,  // Total before tax and shipping
+      tax: 0,          // No additional tax (already calculated)
+      shipping: 0,     // No additional shipping (already included if applicable)
+      total: total,
+      status: 'pending',
+      paymentMethod: req.body.paymentMethod || 'cash_on_delivery',
+      paymentStatus: req.body.paymentStatus || 'pending'
     });
 
     console.log('Order created, ID:', order._id);

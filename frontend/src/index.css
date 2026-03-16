@@ -137,34 +137,34 @@ body {
   --primary-50: #e6f7fa;
 
   /* Vibrant accent colors */
-  --accent-yellow: #ffd600;
-  --accent-blue: #3a86ff;
+  --accent-yellow: #06b6d4;
+  --accent-blue: #0ea5e9;
   --accent-green: #00b894;
   --accent-purple: #9d4edd;
   --accent-pink: #ff006e;
 
   /* Button/Highlight Colors */
-  --secondary: #3a86ff; /* Bright blue */
-  --secondary-dark: #2653a3;
-  --secondary-darker: #142850;
-  --secondary-light: #e3f2fd;
-  --secondary-50: #f5faff;
+  --secondary: #06b6d4; /* Teal blue */
+  --secondary-dark: #0891b2;
+  --secondary-darker: #0d9488;
+  --secondary-light: #a5f3fc;
+  --secondary-50: #ecf8ff;
 
-  --accent-yellow: #ffd600;
+  --accent-yellow: #06b6d4;
   --accent-green: #00b894;
   --accent-purple: #9d4edd;
   --accent-pink: #ff006e;
-  --secondary: #ffd600; /* Yellow */
-  --secondary-dark: #c7a600;
-  --secondary-darker: #a68b00;
-  --secondary-light: #fff9c4;
-  --secondary-50: #fffde7;
+  --secondary: #06b6d4; /* Teal blue */
+  --secondary-dark: #0891b2;
+  --secondary-darker: #0d9488;
+  --secondary-light: #a5f3fc;
+  --secondary-50: #ecf8ff;
   /* Accent Gradients */
-  --gradient-yellow-light: linear-gradient(90deg, #fff9c4 0%, #ffd600 100%);
+  --gradient-yellow-light: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
   --gradient-green-medium: linear-gradient(135deg, #b9f6ca 0%, #00b894 100%);
   --gradient-purple-dark: linear-gradient(135deg, #f3c4fb 0%, #9d4edd 100%);
   --gradient-pink-vibrant: linear-gradient(90deg, #ff8a80 0%, #ff006e 100%);
-  --gradient-yellow-indigo: linear-gradient(135deg, #ffd600 0%, #9d4edd 100%);
+  --gradient-yellow-indigo: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
   --success: #00b894;
   --success-dark: #009624;
   --success-50: #b9f6ca;
@@ -201,15 +201,15 @@ body {
 }
 /* ...existing code... */
 .btn-secondary {
-  background: linear-gradient(90deg, #ffe0b2 0%, #c6ff00 100%);
-  color: #23272f;
+  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+  color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(198, 255, 0, 0.18);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
 .btn-secondary:hover {
-  background: linear-gradient(135deg, #23272f 0%, #7c4dff 100%);
+  background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(124, 77, 255, 0.25);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
 }
 .btn-success {
   background: linear-gradient(90deg, #b9f6ca 0%, #00b894 100%);
@@ -218,9 +218,9 @@ body {
   box-shadow: 0 4px 12px rgba(0, 184, 148, 0.18);
 }
 .btn-success:hover {
-  background: linear-gradient(90deg, #1de9b6 0%, #c6ff00 100%);
+  background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(198, 255, 0, 0.25);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.25);
 }
 /* ...existing code... */
 
@@ -289,36 +289,7 @@ body {
 }
 
 .justify-between {
-  border: 1px solid var(--primary);
-  box-shadow: var(--shadow-sm);
-  color: var(--text-inverse);
-  --accent-yellow: #ffd600;
-  --accent-green: #00b894;
-  --accent-purple: #9d4edd;
-  --accent-pink: #ff006e;
-  --secondary: #ffd600; /* Yellow */
-  --secondary-dark: #c7a600;
-  --secondary-darker: #a68b00;
-  --secondary-light: #fff9c4;
-  --secondary-50: #fffde7;
-  /* Accent Gradients */
-  --gradient-yellow-light: linear-gradient(90deg, #fff9c4 0%, #ffd600 100%);
-  --gradient-green-medium: linear-gradient(135deg, #b9f6ca 0%, #00b894 100%);
-  --gradient-purple-dark: linear-gradient(135deg, #f3c4fb 0%, #9d4edd 100%);
-  --gradient-pink-vibrant: linear-gradient(90deg, #ff8a80 0%, #ff006e 100%);
-  --gradient-yellow-indigo: linear-gradient(135deg, #ffd600 0%, #9d4edd 100%);
-  --success: #00b894;
-  --success-dark: #009624;
-  --success-50: #b9f6ca;
-  --white: #ffffff;
-  --black: #22223b;
-  --dark: #1a1a2e;
-  --light: #f8fafc;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f4f4f8;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
+  justify-content: space-between;
 }
 
 .btn-primary {
@@ -608,7 +579,7 @@ body {
 
 /* Sidebar */
 .sidebar {
-  background: var(--gradient-blue-dark);
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   color: var(--white);
   width: 250px;
   height: 100vh;
@@ -645,7 +616,7 @@ body {
 
 .sidebar-nav a:hover,
 .sidebar-nav a.active {
-  background: var(--gradient-blue-medium);
+  background: linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%);
   color: var(--white);
 }
 
@@ -654,6 +625,15 @@ body {
   padding: 2rem;
   background: var(--secondary);
   min-height: 100vh;
+}
+
+.sidebar-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, rgba(54, 209, 196, 0.1) 0%, rgba(30, 60, 114, 0.1) 100%);
 }
 
 /* ========================================
@@ -2215,11 +2195,11 @@ body {
 
 .notification-toast.warning {
   background: linear-gradient(135deg,
-      rgba(245, 158, 11, 0.95) 0%,
-      rgba(217, 119, 6, 0.95) 100%);
-  color: #1f2937;
+      rgba(14, 165, 233, 0.95) 0%,
+      rgba(6, 182, 212, 0.95) 100%);
+  color: #ffffff;
   border-left: 4px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.3);
 }
 
 .notification-toast.info {
@@ -4119,7 +4099,7 @@ body {
 }
 
 .bg-yellow-400 {
-  background-color: #fbbf24;
+  background-color: #06b6d4;
 }
 
 .h-2 {

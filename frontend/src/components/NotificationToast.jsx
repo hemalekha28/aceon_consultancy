@@ -31,7 +31,7 @@ const NotificationToast = () => {
         };
       case 'warning':
         return {
-          background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+          background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
           color: 'white'
         };
       default:

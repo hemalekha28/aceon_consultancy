@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const Order = require('../models/Order');
 const razorpay = require('../utils/razorpay');
 const { sendOrderConfirmationEmail } = require('../utils/emailService');
+const { calculateTotalTax } = require('../utils/taxCalculation');
 
 // Create Razorpay order
 const createRazorpayOrder = async (req, res) => {
@@ -66,12 +67,39 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    // Calculate subtotal, tax, and shipping
+    let subtotal = 0;
+    const productsData = orderData.products.map(item => {
+      const itemTotal = (item.price || 0) * (item.quantity || 1);
+      subtotal += itemTotal;
+      return {
+        product: item.product,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+        category: item.category
+      };
+    });
+
+    // Calculate tax based on material categories
+    const tax = calculateTotalTax(productsData);
+    
+    // Calculate shipping (free above 50, otherwise 9.99)
+    const shipping = subtotal > 50 ? 0 : 9.99;
+    
+    // Calculate final total
+    const total = subtotal + tax + shipping;
+
     // Create order in database
     const order = new Order({
       user: req.user._id,
-      products: orderData.products,
+      products: productsData,
       shippingAddress: orderData.shippingAddress,
-      total: orderData.total,
+      subtotal: subtotal,
+      tax: tax,
+      shipping: shipping,
+      total: total,
       paymentMethod: 'online',
       paymentStatus: 'paid',
       paymentDetails: {
@@ -90,7 +118,10 @@ const verifyPayment = async (req, res) => {
       {
         orderId: order._id.toString().slice(-8),
         orderDate: order.createdAt,
-        total: order.total,
+        subtotal: subtotal,
+        tax: tax,
+        shipping: shipping,
+        total: total,
         items: order.products,
         shippingAddress: order.shippingAddress
       }

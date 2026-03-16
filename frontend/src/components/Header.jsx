@@ -79,9 +79,6 @@ const Header = () => {
               <Link to="/products" className={isActive('/products') ? 'active' : ''}>
                 Mattresses
               </Link>
-              <Link to="/products?category=bedding" className={isActive('/products?category=bedding') ? 'active' : ''}>
-                Bedding
-              </Link>
             </nav>
 
             {/* Search Bar */}
