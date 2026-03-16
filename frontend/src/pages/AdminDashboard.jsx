@@ -35,6 +35,9 @@ ChartJS.register(
 
 const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
+  const [prediction, setPrediction] = useState(null);
+  const [demandForecast, setDemandForecast] = useState(null);
+  const [sleepAnalytics, setSleepAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState('line');
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -53,9 +56,18 @@ const AdminDashboard = () => {
 
   const loadAnalytics = async () => {
     try {
-      const data = await api.getAnalytics();
-      const normalized = data && typeof data === 'object' && 'data' in data ? data.data : data;
+      const [analyticsData, predictionData, demandData, sleepData] = await Promise.all([
+        api.getAnalytics(),
+        api.getSalesPrediction(),
+        api.getDemandForecast(),
+        api.getSleepAnalytics()
+      ]);
+      
+      const normalized = analyticsData && typeof analyticsData === 'object' && 'data' in analyticsData ? analyticsData.data : analyticsData;
       setAnalytics(normalized);
+      setPrediction(predictionData.data);
+      setDemandForecast(demandData.data);
+      setSleepAnalytics(sleepData.data);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('AdminDashboard: Error loading analytics:', error);
@@ -387,6 +399,128 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Sales Prediction Summary */}
+      {prediction && (
+        <div className="card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white' }}>
+          <div className="card-body" style={{ padding: '1.5rem 2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
+                  <FiTrendingUp />
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>AI Sales Forecast (Next Month)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '15px' }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 800 }}>{formatPrice(prediction.prediction.nextMonthRevenue)}</span>
+                  <span style={{ 
+                    fontSize: '1.2rem', 
+                    fontWeight: 700, 
+                    color: prediction.prediction.growthPercentage >= 0 ? '#4ade80' : '#f87171',
+                    background: 'rgba(255,255,255,0.1)',
+                    padding: '4px 10px',
+                    borderRadius: '20px'
+                  }}>
+                    {prediction.prediction.growthPercentage >= 0 ? '+' : ''}{prediction.prediction.growthPercentage}%
+                  </span>
+                </div>
+                <p style={{ margin: '10px 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
+                  Based on historical trends, we expect <strong>{prediction.prediction.nextMonthOrders} orders</strong> next month.
+                </p>
+              </div>
+              <Link to="/admin/analytics" className="btn" style={{ background: 'white', color: 'var(--primary)', fontWeight: 600 }}>
+                View Full Analytics
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Smart Demand & Sleep Insights Grid */}
+      <div className="grid grid-2" style={{ gap: '2rem', marginBottom: '2rem' }}>
+        {/* Demand Prediction Card */}
+        <div className="card">
+          <div className="card-header" style={{ borderLeft: '4px solid #7C5CFC' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FiTrendingUp color="#7C5CFC" /> Smart Demand Prediction
+            </h3>
+          </div>
+          <div className="card-body">
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '1.25rem' }}>
+              AI-driven unit forecast for next month based on historical category trends.
+            </p>
+            {!demandForecast ? (
+              <p>Loading forecast...</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {demandForecast.slice(0, 3).map((item, idx) => (
+                  <div key={item.category} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                        {idx + 1}. {item.category.replace('-', ' ')}
+                      </div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px' }}>
+                        {item.predictedUnits} units
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: 700, 
+                        color: item.trend === 'Increasing' ? 'var(--success-dark)' : 'var(--text-tertiary)',
+                        background: item.trend === 'Increasing' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0,0,0,0.05)',
+                        padding: '4px 8px',
+                        borderRadius: '6px'
+                      }}>
+                        {item.trend} demand
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: '1.25rem', padding: '10px', background: 'rgba(124, 92, 252, 0.05)', borderRadius: '8px', border: '1px dashed rgba(124, 92, 252, 0.3)' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                💡 <strong>Strategy:</strong> Prepare stock for high-demand items to avoid lost sales.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Sleep Insights Card */}
+        <div className="card">
+          <div className="card-header" style={{ borderLeft: '4px solid #4FACFE' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FiUsers color="#4FACFE" /> Customer Sleep Profile
+            </h3>
+          </div>
+          <div className="card-body">
+            {!sleepAnalytics ? (
+              <p>Loading sleep profiles...</p>
+            ) : (
+              <>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '0.75rem' }}>Sleeper Positons</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {sleepAnalytics.positions.map(pos => (
+                      <div key={pos.label}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 600 }}>{pos.label} Sleepers</span>
+                          <span>{pos.percentage}%</span>
+                        </div>
+                        <div style={{ height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+                          <div style={{ height: '100%', background: '#4FACFE', borderRadius: '4px', width: `${pos.percentage}%` }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Top Quiz Recommendation</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{sleepAnalytics.topRecommendation}</div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
       {/* Quick Actions */}
       <div className="card" style={{ marginBottom: '2rem' }}>
         <div className="card-header">
@@ -458,6 +592,20 @@ const AdminDashboard = () => {
             }}>
               <FiTag size={32} style={{ marginBottom: '0.5rem' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Manage Coupons</span>
+            </Link>
+
+            <Link to="/admin/analytics" className="btn btn-info" style={{
+              padding: '2rem 1rem',
+              flexDirection: 'column',
+              height: 'auto',
+              borderRadius: '16px',
+              background: '#0ea5e9',
+              borderColor: '#0ea5e9',
+              color: 'white',
+              transition: 'all 0.3s ease'
+            }}>
+              <FiBarChart2 size={32} style={{ marginBottom: '0.5rem' }} />
+              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Sales analytics</span>
             </Link>
           </div>
         </div>
@@ -762,26 +910,26 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Top Products */}
+        {/* Top Selling Products */}
         <div className="card">
           <div className="card-header">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Top Rated Products</h3>
-              <Link to="/admin/products" className="btn btn-sm btn-secondary">
-                View All
+              <h3>Top Selling Products</h3>
+              <Link to="/admin/analytics" className="btn btn-sm btn-secondary">
+                Analyze More
               </Link>
             </div>
           </div>
           <div className="card-body">
-            {!analytics.topProducts || analytics.topProducts.length === 0 ? (
+            {!analytics.bestSellers || analytics.bestSellers.length === 0 ? (
               <p style={{ color: 'var(--gray-500)', textAlign: 'center', padding: '2rem 0' }}>
-                No products found
+                No sales data yet
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {analytics.topProducts.map((product, index) => (
+                {analytics.bestSellers.map((product, index) => (
                   <div
-                    key={product.id}
+                    key={product._id}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -795,7 +943,7 @@ const AdminDashboard = () => {
                       style={{
                         width: '30px',
                         height: '30px',
-                        backgroundColor: 'var(--primary)',
+                        backgroundColor: (index === 0) ? '#fbbf24' : (index === 1) ? '#94a3b8' : (index === 2) ? '#92400e' : 'var(--primary)',
                         color: 'white',
                         borderRadius: '50%',
                         display: 'flex',
@@ -807,30 +955,12 @@ const AdminDashboard = () => {
                     >
                       {index + 1}
                     </div>
-                    <img
-                      src={constructImageUrl(product.image)}
-                      alt={product.name}
-                      style={{
-                        width: '50px',
-                        height: '50px',
-                        objectFit: 'cover',
-                        borderRadius: 'var(--border-radius)'
-                      }}
-                      onError={(e) => {
-                        if (!e.target.src.startsWith('data:')) {
-                          e.target.src = createFallbackImage();
-                        }
-                      }}
-                    />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
                         {product.name}
                       </div>
                       <div style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>
-                        {formatPrice(product.price)} • ⭐ {product.rating}
-                        {product.totalSales && (
-                          <span> • {product.totalSales} sold</span>
-                        )}
+                        Revenue: {formatPrice(product.revenue)} • <strong>{product.unitsSold} units sold</strong>
                       </div>
                     </div>
                   </div>

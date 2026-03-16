@@ -1,11 +1,136 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
-import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo, FiTag } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiUser, FiMenu, FiSearch, FiLogOut, FiPhone, FiInfo, FiTag, FiStar, FiX } from 'react-icons/fi';
 import { api } from '../utils/api';
 import Logo from './Logo';
+import { constructImageUrl } from '../utils/imageUtils';
+
+/* ─── Smart Search Component ──────────────────────────────────────── */
+function SmartSearch({ navigate }) {
+  const [query, setQuery]     = useState('');
+  const [results, setResults] = useState([]);
+  const [intents, setIntents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const wrapRef = useRef(null);
+  const timerRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const doSearch = useCallback(async (q) => {
+    if (!q.trim()) { setResults([]); setIntents([]); setOpen(false); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/smart-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.success) {
+        setResults(data.data.products || []);
+        setIntents(data.data.intents || []);
+        setOpen(true);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, []);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(timerRef.current);
+    if (val.trim().length >= 2) {
+      timerRef.current = setTimeout(() => doSearch(val), 350);
+    } else {
+      setResults([]); setIntents([]); setOpen(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim()) {
+      setOpen(false);
+      navigate(`/products?search=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  const goToProduct = (id) => { setOpen(false); setQuery(''); navigate(`/product/${id}`); };
+
+  return (
+    <div ref={wrapRef} className="smart-search-wrap">
+      <form onSubmit={handleSubmit} className="smart-search-form">
+        <div className="smart-search-inner">
+          <FiSearch className="ss-icon-left" size={16} />
+          <input
+            type="text"
+            value={query}
+            onChange={handleChange}
+            onFocus={() => { if (results.length > 0) setOpen(true); }}
+            placeholder="Try: mattress for back pain…"
+            className="ss-input"
+            autoComplete="off"
+          />
+          {loading && <div className="ss-spinner" />}
+          {query && !loading && (
+            <button type="button" className="ss-clear" onClick={() => { setQuery(''); setResults([]); setOpen(false); }}>
+              <FiX size={13} />
+            </button>
+          )}
+        </div>
+      </form>
+
+      {open && (
+        <div className="ss-dropdown">
+          {/* Intent tags */}
+          {intents.length > 0 && (
+            <div className="ss-intents">
+              {intents.map((tag, i) => (
+                <span key={i} className="ss-intent-tag">{tag}</span>
+              ))}
+            </div>
+          )}
+
+          {results.length === 0 ? (
+            <div className="ss-empty">No results found for &ldquo;{query}&rdquo;</div>
+          ) : (
+            <>
+              <div className="ss-results-label">
+                {intents.length > 0 ? 'AI Matched Results' : 'Search Results'} &mdash; {results.length} found
+              </div>
+              <ul className="ss-list">
+                {results.map(p => (
+                  <li key={p._id} className="ss-item" onClick={() => goToProduct(p._id)}>
+                    <div className="ss-thumb">
+                      <img src={constructImageUrl(p.image)} alt={p.name} onError={e => e.target.style.display='none'} />
+                    </div>
+                    <div className="ss-info">
+                      <span className="ss-name">{p.name}</span>
+                      <div className="ss-meta">
+                        {p.category && <span className="ss-cat">{p.category}</span>}
+                        {p.rating > 0 && (
+                          <span className="ss-rating"><FiStar size={10} /> {p.rating.toFixed(1)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="ss-price">₹{(p.price || 0).toLocaleString('en-IN')}</span>
+                  </li>
+                ))}
+              </ul>
+              <button className="ss-view-all" onClick={() => { setOpen(false); navigate(`/products?search=${encodeURIComponent(query)}`); }}>
+                View all results for &ldquo;{query}&rdquo; →
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -13,7 +138,6 @@ const Header = () => {
   const { wishlist } = useWishlist();
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCoupons, setActiveCoupons] = useState([]);
@@ -55,13 +179,6 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showUserMenu]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -153,23 +270,14 @@ const Header = () => {
               <Link to="/products?category=bedding" className={isActive('/products?category=bedding') ? 'active' : ''}>
                 Bedding
               </Link>
+              <Link to="/customize" className={isActive('/customize') ? 'active' : ''}>
+                Customize
+              </Link>
             </nav>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="navbar-search-form">
-              <div className="search-input-wrapper">
-                <input
-                  type="text"
-                  placeholder="Find your perfect sleep..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input"
-                />
-                <button type="submit" className="search-submit">
-                  <FiSearch />
-                </button>
-              </div>
-            </form>
+            {/* Smart Search Bar */}
+            <SmartSearch navigate={navigate} />
+
 
             {/* Actions */}
             <div className="navbar-actions">
@@ -489,6 +597,197 @@ const Header = () => {
           @media (max-width: 1024px) {
             .navbar-nav.desktop-nav { display: none; }
             .navbar-search-form { display: none; }
+          }
+
+          /* ── Smart Search ── */
+          .smart-search-wrap {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+            margin-right: auto;
+          }
+          .smart-search-form { width: 100%; }
+          .smart-search-inner {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+          .ss-icon-left {
+            position: absolute;
+            left: 12px;
+            color: #64748b;
+            pointer-events: none;
+            flex-shrink: 0;
+          }
+          .ss-input {
+            width: 100%;
+            padding: 0.6rem 2.2rem 0.6rem 2.4rem;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            font-family: inherit;
+          }
+          .ss-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+          }
+          .ss-clear {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            border-radius: 50%;
+          }
+          .ss-clear:hover { color: #475569; background: #f1f5f9; }
+          .ss-spinner {
+            position: absolute;
+            right: 12px;
+            width: 14px; height: 14px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: ssSpin 0.6s linear infinite;
+          }
+          @keyframes ssSpin { to { transform: rotate(360deg); } }
+
+          .ss-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0; right: 0;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+            border: 1px solid #f1f5f9;
+            z-index: 9999;
+            overflow: hidden;
+            animation: ssDropIn 0.18s ease-out;
+          }
+          @keyframes ssDropIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          .ss-intents {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 12px 14px 8px;
+            border-bottom: 1px solid #f8fafc;
+          }
+          .ss-intent-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #ede9fe, #dbeafe);
+            color: #4c1d95;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid #c4b5fd;
+          }
+          .ss-results-label {
+            padding: 8px 14px 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+          }
+          .ss-list {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            max-height: 320px;
+            overflow-y: auto;
+          }
+          .ss-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+          }
+          .ss-item:hover { background: #f8fafc; }
+          .ss-thumb {
+            width: 42px; height: 42px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .ss-thumb img { width: 100%; height: 100%; object-fit: cover; }
+          .ss-info { flex: 1; min-width: 0; }
+          .ss-name {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .ss-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+          .ss-cat {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: capitalize;
+            color: #6366f1;
+            background: #ede9fe;
+            padding: 1px 6px;
+            border-radius: 4px;
+          }
+          .ss-rating {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: #f59e0b;
+            font-weight: 600;
+          }
+          .ss-price {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            flex-shrink: 0;
+          }
+          .ss-empty {
+            padding: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+          }
+          .ss-view-all {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+            color: #6366f1;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.15s;
+          }
+          .ss-view-all:hover { background: #ede9fe; }
+
+          @media (max-width: 1024px) {
+            .navbar-nav.desktop-nav { display: none; }
+            .smart-search-wrap { display: none; }
           }
         `}
       </style>

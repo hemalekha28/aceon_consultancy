@@ -1,781 +1,639 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    FiArrowLeft,
-    FiArrowRight,
-    FiCheck,
-    FiRefreshCw,
-    FiShoppingCart,
-    FiInfo,
-    FiZap,
-    FiAward,
-    FiThermometer,
-    FiDollarSign,
-    FiMapPin,
-    FiStar,
-    FiTarget,
-    FiActivity,
-    FiChevronRight,
-    FiUser,
-    FiTrendingUp,
-    FiShield
-} from 'react-icons/fi';
 import { api } from '../utils/api';
 import Image from '../components/Image';
 import { formatPrice } from '../utils/helpers';
 import { constructImageUrl } from '../utils/imageUtils';
 import { useCart } from '../context/cartContext';
 import { useNotification } from '../context/notificationContext';
-
-const SleepQuiz = () => {
-    const navigate = useNavigate();
-    const { addToCart } = useCart();
-    const { showSuccess } = useNotification();
-
-    const [step, setStep] = useState(0); // 0 is landing, 1-6 are questions, 7 is processing, 8 is results
-    const [answers, setAnswers] = useState({
-        weight: '',
-        height: '',
-        position: '',
-        backPain: '',
-        painAreas: [],
-        temperature: '',
-        budget: ''
-    });
-    const [products, setProducts] = useState([]);
-    const [recommendation, setRecommendation] = useState(null);
-    const [alternatives, setAlternatives] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        // Pre-fetch products to have them ready for matching
-        const fetchProducts = async () => {
-            try {
-                const data = await api.getProducts();
-                setProducts(data);
-            } catch (err) {
-                console.error('Error fetching products for quiz:', err);
-            }
-        };
-        fetchProducts();
-    }, []);
-
-    const nextStep = () => {
-        if (step < 6) {
-            setStep(step + 1);
-        } else {
-            processResults();
-        }
-    };
-
-    const prevStep = () => {
-        if (step > 0) {
-            setStep(step - 1);
-        }
-    };
-
-    const handleAnswer = (key, value) => {
-        setAnswers(prev => ({ ...prev, [key]: value }));
-        if (key !== 'painAreas') {
-            nextStep();
-        }
-    };
-
-    const handlePainAreaToggle = (area) => {
-        setAnswers(prev => {
-            const areas = prev.painAreas.includes(area)
-                ? prev.painAreas.filter(a => a !== area)
-                : [...prev.painAreas, area];
-            return { ...prev, painAreas: areas };
-        });
-    };
-
-    const processResults = async () => {
-        setStep(7);
-        setIsLoading(true);
-
-        try {
-            // Call ML API for recommendation
-            const mlResponse = await api.post('/ml/recommend', {
-                weight: answers.weight,
-                position: answers.position,
-                firmness: answers.temperature, // Map temperature to firmness preference
-                backPain: answers.backPain
-            });
-
-            if (mlResponse.data && mlResponse.data.primary) {
-                // Find products that match the ML recommendation
-                findMattressProducts(mlResponse.data.primary.mattress);
-            }
-        } catch (error) {
-            console.error('ML Recommendation Error:', error);
-            // Fall back to local matching
-            findMatches();
-        } finally {
-            setIsLoading(false);
-            setStep(8);
-        }
-    };
-
-    const findMattressProducts = (recommendedMattressType) => {
-        if (products.length === 0) {
-            findMatches();
-            return;
-        }
-
-        // Score products based on ML recommendation
-        const scoredProducts = products.map(product => {
-            let score = 80; // Base score from ML
-            let reasons = [];
-            const name = product.name.toLowerCase();
-
-            // Match mattress type keywords
-            if (recommendedMattressType.toLowerCase().includes('orthopedic') && name.includes('ortho')) {
-                score = 95;
-                reasons.push('ML matched: Orthopedic support recommended');
-            } else if (recommendedMattressType.toLowerCase().includes('firm') && name.includes('firm')) {
-                score = 92;
-                reasons.push('ML matched: Firm support recommended');
-            } else if (recommendedMattressType.toLowerCase().includes('soft') && (name.includes('soft') || name.includes('foam'))) {
-                score = 90;
-                reasons.push('ML matched: Soft foam recommended');
-            } else if (recommendedMattressType.toLowerCase().includes('gel') && (name.includes('gel') || name.includes('cool'))) {
-                score = 88;
-                reasons.push('ML matched: Cooling mattress recommended');
-            } else if (recommendedMattressType.toLowerCase().includes('latex') && name.includes('latex')) {
-                score = 87;
-                reasons.push('ML matched: Natural latex recommended');
-            }
-
-            // Apply position-based scoring
-            if (answers.position === 'side' && (name.includes('soft') || name.includes('foam'))) {
-                score += 5;
-                reasons.push('Ideal pressure relief for side sleepers');
-            } else if ((answers.position === 'back' || answers.position === 'stomach') && (name.includes('firm') || name.includes('hybrid'))) {
-                score += 5;
-                reasons.push('Proper spinal alignment for your position');
-            }
-
-            // Apply weight-based scoring
-            if (answers.weight === 'heavy' && (name.includes('firm') || name.includes('hybrid'))) {
-                score += 3;
-                reasons.push('Enhanced support for your weight');
-            }
-
-            // Apply pain-based scoring
-            if ((answers.backPain === 'frequently' || answers.backPain === 'occasionally') && name.includes('ortho')) {
-                score += 5;
-                reasons.push('Advanced orthopedic support for pain relief');
-            }
-
-            // Apply budget filtering
-            if (answers.budget === 'budget' && product.price > 1000) score -= 20;
-            else if (answers.budget === 'mid' && (product.price < 400 || product.price > 1200)) score -= 10;
-            else if (answers.budget === 'premium' && (product.price < 800 || product.price > 2500)) score -= 10;
-            else if (answers.budget === 'luxury' && product.price < 2000) score -= 15;
-
-            return {
-                ...product,
-                matchScore: Math.min(98, Math.max(70, score)),
-                reasons: reasons.slice(0, 4)
-            };
-        });
-
-        const sorted = scoredProducts.sort((a, b) => b.matchScore - a.matchScore);
-        setRecommendation(sorted[0]);
-        setAlternatives(sorted.slice(1, 4));
-    };
-
-    const findMatches = () => {
-        if (products.length === 0) return;
-
-        // SCORING LOGIC
-        // This is a simplified matching engine
-        const scoredProducts = products.map(product => {
-            let score = 0;
-            let reasons = [];
-
-            const price = product.price;
-            const category = product.category;
-            const name = product.name.toLowerCase();
-
-            // Budget Match
-            if (answers.budget === 'budget' && price < 500) score += 30;
-            else if (answers.budget === 'mid' && price >= 500 && price <= 1000) score += 30;
-            else if (answers.budget === 'premium' && price > 1000 && price <= 2000) score += 30;
-            else if (answers.budget === 'luxury' && price > 2000) score += 30;
-            else if (answers.budget === 'all') score += 20;
-
-            // Position & Firmness Match
-            if (answers.position === 'side') {
-                if (name.includes('soft') || name.includes('foam')) {
-                    score += 20;
-                    reasons.push('Ideal pressure relief for side sleepers');
-                }
-            } else if (answers.position === 'back' || answers.position === 'stomach') {
-                if (name.includes('firm') || name.includes('hybrid')) {
-                    score += 20;
-                    reasons.push('Proper spinal alignment for your position');
-                }
-            }
-
-            // Weight Match
-            if (answers.weight === 'heavy' && (name.includes('firm') || name.includes('hybrid'))) {
-                score += 15;
-                reasons.push('Reinforced support for your weight range');
-            } else if (answers.weight === 'light' && (name.includes('soft') || name.includes('foam'))) {
-                score += 15;
-                reasons.push('Better contouring for lightweight sleepers');
-            }
-
-            // Pain Match
-            if ((answers.backPain === 'frequently' || answers.backPain === 'occasionally') && name.includes('ortho')) {
-                score += 25;
-                reasons.push('Advanced orthopedic support for pain relief');
-            }
-
-            // Temperature Match
-            if (answers.temperature === 'hot' && (name.includes('cool') || name.includes('gel') || name.includes('hybrid'))) {
-                score += 20;
-                reasons.push('Active cooling layers to prevent overheating');
-            }
-
-            // Normalize match score to 70-98% range for psychological effect
-            const matchScore = Math.min(98, Math.max(75, 70 + (score / 120) * 28));
-
-            return { ...product, matchScore, reasons: reasons.slice(0, 4) };
-        });
-
-        // Sort by score
-        const sorted = scoredProducts.sort((a, b) => b.matchScore - a.matchScore);
-
-        setRecommendation(sorted[0]);
-        setAlternatives(sorted.slice(1, 4));
-    };
-
-    const restartQuiz = () => {
-        setStep(0);
-        setAnswers({
-            weight: '',
-            height: '',
-            position: '',
-            backPain: '',
-            painAreas: [],
-            temperature: '',
-            budget: ''
-        });
-    };
-
-    // UI RENDERERS
-
-    const renderLanding = () => (
-        <div className="text-center space-y-8">
-            <div className="space-y-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-2xl">
-                    <FiZap size={32} className="text-white" />
-                </div>
-                <h1 className="text-4xl font-bold text-white leading-tight">
-                    Sleep Quiz
-                </h1>
-                <p className="text-xl text-white/80 font-light">
-                    Find your perfect mattress
-                </p>
-            </div>
-
-            <div className="space-y-6">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                    <div className="flex items-center gap-3 mb-3">
-                        <FiTarget className="text-blue-400" size={20} />
-                        <span className="text-white font-medium">AI-Powered Matching</span>
-                    </div>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                        Our advanced algorithm analyzes your sleep profile to recommend the perfect mattress for your needs.
-                    </p>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                    <div className="flex items-center gap-3 mb-3">
-                        <FiShield className="text-green-400" size={20} />
-                        <span className="text-white font-medium">6 Quick Questions</span>
-                    </div>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                        Answer a few simple questions about your sleep habits, body type, and preferences.
-                    </p>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                    <div className="flex items-center gap-3 mb-3">
-                        <FiAward className="text-yellow-400" size={20} />
-                        <span className="text-white font-medium">Personalized Results</span>
-                    </div>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                        Get detailed recommendations with match percentages and alternative options.
-                    </p>
-                </div>
-            </div>
-
-            <button
-                onClick={() => setStep(1)}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-8 rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-3"
-            >
-                Start Quiz
-                <FiChevronRight size={20} />
-            </button>
-        </div>
-    );
-
-    const renderQuestion = () => {
-        const questions = [
-            {
-                title: "What's your body weight?",
-                subtitle: "This helps determine optimal support",
-                options: [
-                    { id: 'light', label: 'Lightweight', desc: 'Under 130 lbs', icon: '🌸' },
-                    { id: 'avg-light', label: 'Average Light', desc: '130 - 180 lbs', icon: '🍃' },
-                    { id: 'avg-heavy', label: 'Average Heavy', desc: '180 - 230 lbs', icon: '💪' },
-                    { id: 'heavy', label: 'Heavy Duty', desc: 'Over 230 lbs', icon: '🏋️' }
-                ]
-            },
-            {
-                title: "How tall are you?",
-                subtitle: "Height affects posture alignment",
-                options: [
-                    { id: 'short', label: 'Under 5\'4"', desc: 'Petite frame', icon: '📏' },
-                    { id: 'avg-short', label: '5\'4" - 5\'8"', desc: 'Average height', icon: '📐' },
-                    { id: 'avg-tall', label: '5\'9" - 6\'1"', desc: 'Tall stature', icon: '📏' },
-                    { id: 'tall', label: 'Over 6\'1"', desc: 'Very tall', icon: '📏' },
-                    { id: 'skip', label: 'Prefer not to say', desc: 'Skip this question', icon: '🙈' }
-                ]
-            },
-            {
-                title: "What's your sleep position?",
-                subtitle: "Position determines pressure relief needs",
-                options: [
-                    { id: 'side', label: 'Side Sleeper', desc: 'Hip & shoulder relief', icon: '😴' },
-                    { id: 'back', label: 'Back Sleeper', desc: 'Spinal alignment', icon: '😌' },
-                    { id: 'stomach', label: 'Stomach Sleeper', desc: 'Core support', icon: '😪' },
-                    { id: 'combo', label: 'Toss & Turn', desc: 'Dynamic response', icon: '🔄' }
-                ]
-            },
-            {
-                title: "Back pain frequency?",
-                subtitle: "Chronic pain indicates specialized support",
-                options: [
-                    { id: 'frequently', label: 'Frequently', desc: '4+ times per week', icon: '😣' },
-                    { id: 'occasionally', label: 'Occasionally', desc: 'Sometimes occurs', icon: '😐' },
-                    { id: 'rarely', label: 'Rarely', desc: 'Minimal discomfort', icon: '😊' }
-                ]
-            },
-            {
-                title: "How do you sleep temperature-wise?",
-                subtitle: "Temperature affects sleep quality",
-                options: [
-                    { id: 'hot', label: 'Sleep Hot', desc: 'Need cooling mattress', icon: '🔥' },
-                    { id: 'warm', label: 'Warm Sleeper', desc: 'Moderate cooling', icon: '🌡️' },
-                    { id: 'cool', label: 'Cool Sleeper', desc: 'Temperature neutral', icon: '❄️' },
-                    { id: 'cold', label: 'Cold Sleeper', desc: 'May need warmer', icon: '🧊' }
-                ]
-            },
-            {
-                title: "What's your budget range?",
-                subtitle: "Quality sleep is an investment",
-                options: [
-                    { id: 'budget', label: 'Budget Friendly', desc: 'Under $500', icon: '💰' },
-                    { id: 'mid', label: 'Mid Range', desc: '$500 - $1,000', icon: '💳' },
-                    { id: 'premium', label: 'Premium', desc: '$1,000 - $2,000', icon: '💎' },
-                    { id: 'luxury', label: 'Luxury', desc: '$2,000+', icon: '👑' },
-                    { id: 'all', label: 'Show All', desc: 'No budget limit', icon: '🔍' }
-                ]
-            }
-        ];
-
-        const currentQuestion = questions[step - 1];
-
-        return (
-            <div className="space-y-8">
-                <div className="text-center space-y-4">
-                    <h1 className="text-3xl font-bold text-white leading-tight">
-                        {currentQuestion.title}
-                    </h1>
-                    <p className="text-white/70 text-lg">
-                        {currentQuestion.subtitle}
-                    </p>
-                </div>
-
-                <div className="space-y-6">
-                    {currentQuestion.options.map((option, index) => (
-                        <button
-                            key={option.id}
-                            onClick={() => handleAnswer(
-                                step === 1 ? 'weight' :
-                                step === 2 ? 'height' :
-                                step === 3 ? 'position' :
-                                step === 4 ? 'backPain' :
-                                step === 5 ? 'temperature' : 'budget',
-                                option.id
-                            )}
-                            className="w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 hover:border-white/40 transition-all duration-300 group"
-                            style={{ animationDelay: `${index * 100}ms` }}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="text-3xl">{option.icon}</div>
-                                <div className="flex-1 text-left">
-                                    <div className="text-white font-semibold text-lg group-hover:text-blue-300 transition-colors">
-                                        {option.label}
-                                    </div>
-                                    <div className="text-white/60 text-sm">
-                                        {option.desc}
-                                    </div>
-                                </div>
-                                <div className="w-8 h-8 rounded-full border-2 border-white/40 group-hover:border-white group-hover:bg-white/20 flex items-center justify-center transition-all">
-                                    <div className="w-4 h-4 rounded-full bg-blue-500 scale-0 group-hover:scale-100 transition-transform"></div>
-                                </div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Pain Areas Selection for Question 4 */}
-                {step === 4 && (answers.backPain === 'frequently' || answers.backPain === 'occasionally') && (
-                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 space-y-4">
-                        <h3 className="text-white font-semibold text-lg">Target Pain Areas:</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            {['Lower back', 'Upper back', 'Hips', 'Shoulders'].map(area => (
-                                <button
-                                    key={area}
-                                    onClick={() => handlePainAreaToggle(area)}
-                                    className={`p-3 rounded-xl border transition-all duration-200 ${
-                                        answers.painAreas.includes(area)
-                                            ? 'bg-blue-500 border-blue-400 text-white'
-                                            : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'
-                                    }`}
-                                >
-                                    {area}
-                                </button>
-                            ))}
-                        </div>
-                        <button
-                            onClick={nextStep}
-                            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all duration-200"
-                        >
-                            Continue →
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const renderQuestion4 = () => (
-        <div className="animate-fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 tracking-tight">Do you experience back pain?</h2>
-            <p className="text-slate-600 mb-8 text-lg">Chronic tension or localized discomfort indicates the need for specialized support.</p>
-
-            <div className="flex flex-col gap-6 mb-6">
-                {[
-                    { id: 'frequently', label: 'Frequently', sub: 'Pain occurs 4+ times per week' },
-                    { id: 'occasionally', label: 'Occasionally', sub: 'Varies with lifestyle/stress' },
-                    { id: 'rarely', label: 'Rarely', sub: 'Minimal discomfort' },
-                ].map((opt) => (
-                    <button
-                        key={opt.id}
-                        onClick={() => handleAnswer('backPain', opt.id)}
-                        className={`w-full p-6 bg-white border-2 rounded-xl transition-all duration-200 flex items-center justify-between group ${
-                            answers.backPain === opt.id 
-                                ? 'border-indigo-500 bg-indigo-50' 
-                                : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'
-                        }`}
-                    >
-                        <div className="text-left">
-                            <span className={`block text-lg font-semibold mb-1 transition-colors ${
-                                answers.backPain === opt.id ? 'text-indigo-700' : 'text-slate-900 group-hover:text-indigo-700'
-                            }`}>{opt.label}</span>
-                            <span className="text-sm text-slate-500">{opt.sub}</span>
-                        </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            answers.backPain === opt.id ? 'border-indigo-500 bg-white' : 'border-slate-300'
-                        }`}>
-                            {answers.backPain === opt.id && <div className="w-3 h-3 rounded-full bg-indigo-500"></div>}
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            {(answers.backPain === 'frequently' || answers.backPain === 'occasionally') && (
-                <div className="mt-6 p-6 bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="font-semibold text-slate-700 mb-4 text-sm uppercase tracking-wide">Target Pain Areas:</p>
-                    <div className="grid grid-cols-2 gap-4">
-                        {['Lower back', 'Upper back', 'Hips', 'Shoulders'].map(area => (
-                            <label key={area} className="flex items-center gap-3 cursor-pointer group">
-                                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
-                                    answers.painAreas.includes(area) ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-slate-300'
-                                }`}>
-                                    {answers.painAreas.includes(area) && <FiCheck className="text-white" size={12} />}
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={answers.painAreas.includes(area)}
-                                    onChange={() => handlePainAreaToggle(area)}
-                                />
-                                <span className={`font-medium transition-colors ${
-                                    answers.painAreas.includes(area) ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-900'
-                                }`}>{area}</span>
-                            </label>
-                        ))}
-                    </div>
-                    <button
-                        onClick={nextStep}
-                        className="mt-6 w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
-                    >
-                        Continue →
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-
-    const renderQuestion5 = () => (
-        <div className="animate-fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 tracking-tight">How do you sleep temperature-wise?</h2>
-            <p className="text-slate-600 mb-8 text-lg">Body temperature regulation affects sleep quality and mattress choice.</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                    { id: 'hot', icon: '🔥', label: 'Sleep Hot', sub: 'Need cooling mattress' },
-                    { id: 'warm', icon: '🌡️', label: 'Warm Sleeper', sub: 'Moderate cooling' },
-                    { id: 'cool', icon: '❄️', label: 'Cool Sleeper', sub: 'Temperature neutral' },
-                    { id: 'cold', icon: '🧊', label: 'Cold Sleeper', sub: 'May need warmer mattress' },
-                ].map((opt) => (
-                    <button
-                        key={opt.id}
-                        onClick={() => handleAnswer('temperature', opt.id)}
-                        className="w-full p-6 bg-white border-2 border-slate-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 flex flex-col items-center gap-3 text-center group"
-                    >
-                        <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">{opt.icon}</span>
-                        <div>
-                            <span className="block font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors text-lg">{opt.label}</span>
-                            <span className="text-sm text-slate-500">{opt.sub}</span>
-                        </div>
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-    const renderQuestion6 = () => (
-        <div className="animate-fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 tracking-tight">What's your budget range?</h2>
-            <p className="text-slate-600 mb-8 text-lg">Quality sleep is an investment in your long-term health and well-being.</p>
-
-            <div className="flex flex-col gap-6">
-                {[
-                    { id: 'budget', label: 'Budget Friendly', price: 'Under $500' },
-                    { id: 'mid', label: 'Mid Range', price: '$500 - $1,000' },
-                    { id: 'premium', label: 'Premium', price: '$1,000 - $2,000' },
-                    { id: 'luxury', label: 'Luxury', price: '$2,000+' },
-                    { id: 'all', label: 'Show All Options', price: 'All price points' },
-                ].map((opt) => (
-                    <button
-                        key={opt.id}
-                        onClick={() => handleAnswer('budget', opt.id)}
-                        className="w-full p-6 bg-white border-2 border-slate-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 flex items-center justify-between group"
-                    >
-                        <div>
-                            <span className="block text-lg font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{opt.label}</span>
-                            <span className="text-sm text-slate-500">{opt.price}</span>
-                        </div>
-                        <FiArrowRight size={20} className="text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-
-    const renderResults = () => {
-        if (!recommendation) return null;
-
-        return (
-            <div className="animate-fade-in">
-                <div className="text-center mb-12">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-6">
-                        <FiTarget size={16} />
-                        AI Recommendation
-                    </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Your perfect sleep match is ready!</h1>
-                    <p className="text-slate-600 text-lg">Based on your unique sleep profile and preferences.</p>
-                </div>
-
-                {/* Primary Recommendation */}
-                <div className="max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden shadow-xl border border-slate-200 mb-16 hover:shadow-2xl transition-shadow duration-300">
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 py-4 px-6 flex justify-between items-center text-white">
-                        <span className="text-sm font-bold uppercase tracking-wide">🏆 Perfect Match</span>
-                        <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-                            <FiTarget size={12} />
-                            {recommendation.matchScore.toFixed(0)}% Match
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2">
-                        <div className="p-8 md:p-12 bg-slate-50 flex items-center justify-center">
-                            <div className="relative w-full max-w-sm aspect-square">
-                                <Image
-                                    src={constructImageUrl(recommendation.image)}
-                                    alt={recommendation.name}
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-8 md:p-12 flex flex-col justify-center">
-                            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 leading-tight">{recommendation.name}</h2>
-
-                            <div className="mb-6">
-                                <div className="flex justify-between items-end mb-2">
-                                    <span className="text-sm font-semibold text-indigo-600">{recommendation.matchScore.toFixed(0)}% Match</span>
-                                    <span className="text-xs text-slate-400 uppercase tracking-wide">Optimized Fit</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full" style={{ width: `${recommendation.matchScore}%` }}></div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 mb-8">
-                                <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Why this mattress:</p>
-                                {recommendation.reasons.map((reason, i) => (
-                                    <div key={i} className="flex gap-3 text-slate-700 items-start">
-                                        <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <FiCheck className="text-green-600" size={10} />
-                                        </div>
-                                        <span className="text-sm leading-relaxed">{reason}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex items-center justify-between pt-6 border-t border-slate-200">
-                                <div className="flex flex-col">
-                                    <span className="text-2xl font-bold text-slate-900">{formatPrice(recommendation.price)}</span>
-                                    <span className="text-xs font-medium text-green-600 uppercase tracking-wide">In Stock</span>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        addToCart(recommendation);
-                                        showSuccess('Perfect match added to your cart!');
-                                    }}
-                                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2"
-                                >
-                                    <FiShoppingCart size={16} /> Add to Cart
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Alternatives */}
-                {alternatives.length > 0 && (
-                    <div className="max-w-6xl mx-auto mb-12">
-                        <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">Other Great Options</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {alternatives.map(alt => (
-                                <div key={alt._id} className="bg-white rounded-xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-shadow duration-200 flex flex-col">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide">{alt.matchScore.toFixed(0)}% Match</span>
-                                            <div className="h-1 w-12 bg-slate-200 rounded-full mt-1">
-                                                <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${alt.matchScore}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <FiTarget className="text-indigo-300" size={16} />
-                                    </div>
-                                    <div className="w-full aspect-square mb-6">
-                                        <Image src={constructImageUrl(alt.image)} alt={alt.name} className="w-full h-full object-contain" />
-                                    </div>
-                                    <h4 className="font-bold text-lg text-slate-900 mb-2 truncate">{alt.name}</h4>
-                                    <span className="font-semibold text-slate-600 mb-4">{formatPrice(alt.price)}</span>
-                                    <button
-                                        onClick={() => navigate(`/product/${alt._id}`)}
-                                        className="mt-auto w-full py-3 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors duration-200 flex items-center justify-center gap-2"
-                                    >
-                                        View Details <FiArrowRight size={16} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="text-center">
-                    <button
-                        onClick={restartQuiz}
-                        className="inline-flex items-center gap-2 px-6 py-3 text-slate-500 hover:text-indigo-600 transition-colors duration-200 font-medium"
-                    >
-                        <FiRefreshCw size={16} /> Take the Quiz Again
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-                <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
-            </div>
-
-            <div className="relative z-10 min-h-screen flex flex-col">
-                {/* Header */}
-                <header className="flex justify-between items-center p-6">
-                    <button
-                        onClick={() => navigate('/')}
-                        className="text-white/70 hover:text-white transition-colors"
-                    >
-                        <FiArrowLeft size={24} />
-                    </button>
-                    {step > 0 && step < 7 && (
-                        <div className="flex items-center gap-2 text-white/70">
-                            <span className="text-sm">{step}/6</span>
-                        </div>
-                    )}
-                    <div className="w-6"></div> {/* Spacer */}
-                </header>
-
-                {/* Main Content */}
-                <main className="flex-1 flex items-center justify-center px-6 py-8">
-                    <div className="w-full max-w-md">
-                        {step === 0 && renderLanding()}
-                        {(step >= 1 && step <= 6) && renderQuestion()}
-                        {step === 7 && renderProcessing()}
-                        {step === 8 && renderResults()}
-                    </div>
-                </main>
-
-                {/* Navigation */}
-                {step > 0 && step < 7 && (
-                    <footer className="p-6">
-                        <div className="flex justify-between items-center">
-                            {step > 1 && (
-                                <button
-                                    onClick={prevStep}
-                                    className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-                                >
-                                    <FiArrowLeft size={20} />
-                                    Back
-                                </button>
-                            )}
-                            <div className="flex-1"></div>
-                            <div className="text-white/50 text-sm">
-                                Step {step} of 6
-                            </div>
-                        </div>
-                    </footer>
-                )}
-            </div>
-        </div>
-    );
+import { useAuth } from '../context/authContext';
+
+/* ─── Inline styles / design tokens ─────────────────────────────────── */
+const S = {
+  page: {
+    minHeight: '100vh',
+    background: 'radial-gradient(ellipse at 20% 20%, #1a0a3e 0%, #0a0a2e 40%, #070718 100%)',
+    fontFamily: '"DM Sans", sans-serif',
+    color: '#fff',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  blob1: {
+    position: 'fixed', top: '-120px', left: '-80px',
+    width: '400px', height: '400px', borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,92,252,0.18) 0%, transparent 70%)',
+    pointerEvents: 'none',
+  },
+  blob2: {
+    position: 'fixed', bottom: '-100px', right: '-60px',
+    width: '350px', height: '350px', borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(79,172,254,0.14) 0%, transparent 70%)',
+    pointerEvents: 'none',
+  },
+  blob3: {
+    position: 'fixed', top: '40%', right: '15%',
+    width: '200px', height: '200px', borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,92,252,0.1) 0%, transparent 70%)',
+    pointerEvents: 'none',
+  },
+  glass: {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    backdropFilter: 'blur(16px)',
+    borderRadius: '16px',
+  },
+  glassSelected: {
+    background: 'rgba(124,92,252,0.18)',
+    border: '1.5px solid rgba(124,92,252,0.7)',
+    backdropFilter: 'blur(16px)',
+    borderRadius: '16px',
+    boxShadow: '0 0 20px rgba(124,92,252,0.25)',
+  },
+  h1: { fontFamily: '"Sora", sans-serif', fontWeight: 800 },
+  h2: { fontFamily: '"Sora", sans-serif', fontWeight: 700 },
+  accent: '#7C5CFC',
+  blue: '#4FACFE',
+  muted: 'rgba(255,255,255,0.6)',
+  pill: {
+    display: 'inline-flex', alignItems: 'center', gap: '8px',
+    padding: '6px 16px', borderRadius: '999px',
+    background: 'rgba(124,92,252,0.18)',
+    border: '1px solid rgba(124,92,252,0.4)',
+    fontSize: '12px', fontWeight: 700,
+    color: '#b8a0fc', letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+  },
 };
 
-export default SleepQuiz;
+const fadeUp = `
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes barFill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+@keyframes pulsePurple {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,92,252,0.4); }
+  50%       { box-shadow: 0 0 0 16px rgba(124,92,252,0); }
+}
+.sq-fade { animation: fadeUp 0.45s ease both; }
+.sq-delay-1 { animation-delay: 0.1s; }
+.sq-delay-2 { animation-delay: 0.2s; }
+.sq-delay-3 { animation-delay: 0.3s; }
+.sq-delay-4 { animation-delay: 0.4s; }
+`;
+
+const QUESTIONS = [
+  {
+    key: 'position',
+    title: "What's your primary sleep position?",
+    options: [
+      { id: 'side',    label: 'Side',        icon: '😴', desc: 'Hip & shoulder relief' },
+      { id: 'back',    label: 'Back',        icon: '😌', desc: 'Spinal alignment' },
+      { id: 'stomach', label: 'Stomach',     icon: '😪', desc: 'Core support' },
+      { id: 'combo',   label: 'Combination', icon: '🔄', desc: 'Toss & turn at night' },
+    ],
+  },
+  {
+    key: 'weight',
+    title: 'How would you describe your body weight?',
+    options: [
+      { id: 'light',   label: 'Light',   icon: '🌸', desc: 'Under 60 kg' },
+      { id: 'average', label: 'Average', icon: '💪', desc: '60 – 105 kg' },
+      { id: 'heavy',   label: 'Heavy',   icon: '🏋️', desc: 'Above 105 kg' },
+    ],
+  },
+  {
+    key: 'partner',
+    title: 'Do you sleep with a partner?',
+    options: [
+      { id: 'yes', label: 'Yes', icon: '👫', desc: 'Motion isolation matters' },
+      { id: 'no',  label: 'No',  icon: '🛏️', desc: 'Sleep alone' },
+    ],
+  },
+  {
+    key: 'firmness',
+    title: 'How do you prefer your mattress firmness?',
+    options: [
+      { id: 'soft',     label: 'Soft',     icon: '☁️',  desc: 'Sink-in & plush' },
+      { id: 'medium',   label: 'Medium',   icon: '🌙',  desc: 'Balanced feel' },
+      { id: 'firm',     label: 'Firm',     icon: '🪨',  desc: 'Solid support' },
+      { id: 'not-sure', label: 'Not Sure', icon: '🤷',  desc: 'Help me decide' },
+    ],
+  },
+  {
+    key: 'pain',
+    title: 'Do you experience any of these?',
+    options: [
+      { id: 'back',     label: 'Back Pain',     icon: '🔵', desc: 'Lower or upper back' },
+      { id: 'hip',      label: 'Hip Pain',      icon: '🟣', desc: 'Hip joint discomfort' },
+      { id: 'shoulder', label: 'Shoulder Pain', icon: '🟡', desc: 'Shoulder pressure' },
+      { id: 'none',     label: 'None',          icon: '✅', desc: 'No chronic pain' },
+    ],
+  },
+  {
+    key: 'budget',
+    title: "What's your budget range?",
+    options: [
+      { id: 'budget',  label: 'Budget',  icon: '💰', desc: 'Under ₹15,000' },
+      { id: 'mid',     label: 'Mid',     icon: '💳', desc: '₹15,000 – ₹35,000' },
+      { id: 'premium', label: 'Premium', icon: '💎', desc: '₹35,000 – ₹70,000' },
+      { id: 'luxury',  label: 'Luxury',  icon: '👑', desc: '₹70,000+' },
+    ],
+  },
+];
+
+/* ─── Scoring Engine ─────────────────────────────────────────────── */
+function scoreProducts(products, answers) {
+  const scored = products.map(p => {
+    let score = 0;
+    const reasons = [];
+    const name = p.name.toLowerCase();
+    const cat  = (p.category || '').toLowerCase();
+    const price = p.price;
+
+    // Budget (INR)
+    if (answers.budget === 'budget'  && price < 15000)                     score += 30;
+    else if (answers.budget === 'mid'     && price >= 15000 && price <= 35000) score += 30;
+    else if (answers.budget === 'premium' && price > 35000 && price <= 70000)  score += 30;
+    else if (answers.budget === 'luxury'  && price > 70000)                    score += 30;
+    else score -= 8;
+
+    // Sleep position
+    if (answers.position === 'side') {
+      if (cat.includes('foam') || cat.includes('softy') || name.includes('soft') || name.includes('foam')) {
+        score += 25; reasons.push('Soft foam cushions shoulders & hips for side sleepers');
+      } else if (cat === 'latex' || name.includes('latex')) {
+        score += 20; reasons.push('Latex provides responsive pressure relief for side sleepers');
+      }
+    }
+    if (answers.position === 'back' || answers.position === 'stomach') {
+      if (cat === 'coir' || name.includes('firm') || name.includes('ortho')) {
+        score += 25; reasons.push('Firm support maintains spinal alignment');
+      } else if (cat === 'spring' || name.includes('spring')) {
+        score += 20; reasons.push('Innerspring provides sturdy back support');
+      }
+    }
+    if (answers.position === 'combo') {
+      if (cat === 'latex' || cat === 'spring') {
+        score += 22; reasons.push('Responsive material adapts to changing positions');
+      }
+    }
+
+    // Weight
+    if (answers.weight === 'heavy') {
+      if (cat === 'coir' || cat === 'spring' || name.includes('firm') || name.includes('ortho')) {
+        score += 18; reasons.push('Reinforced support handles higher weight without sag');
+      }
+    } else if (answers.weight === 'light') {
+      if (cat.includes('foam') || cat.includes('softy') || cat === 'latex') {
+        score += 18; reasons.push('Plush layers contour perfectly to lighter frames');
+      }
+    }
+
+    // Partner (motion isolation)
+    if (answers.partner === 'yes') {
+      if (cat.includes('foam') || cat.includes('softy') || cat === 'latex') {
+        score += 12; reasons.push('Excellent motion isolation — won\'t disturb your partner');
+      }
+    }
+
+    // Firmness preference
+    if (answers.firmness === 'soft') {
+      if (cat.includes('foam') || cat.includes('softy') || name.includes('soft')) {
+        score += 20; reasons.push('Cloud-like softness matches your comfort preference');
+      }
+    } else if (answers.firmness === 'firm') {
+      if (cat === 'coir' || name.includes('firm') || name.includes('ortho')) {
+        score += 20; reasons.push('Solid firmness level matches your preference');
+      }
+    } else if (answers.firmness === 'medium') {
+      if (cat === 'latex' || cat === 'spring') {
+        score += 18; reasons.push('Balanced medium feel — not too soft, not too firm');
+      }
+    }
+
+    // Pain
+    if (answers.pain === 'back') {
+      if (name.includes('ortho') || name.includes('orthopedic')) {
+        score += 30; reasons.push('Orthopedic design specifically targets back pain relief');
+      } else if (cat === 'coir' || name.includes('firm')) {
+        score += 14; reasons.push('Firm base reduces lower back strain');
+      }
+    }
+    if (answers.pain === 'hip' || answers.pain === 'shoulder') {
+      if (cat.includes('foam') || cat.includes('softy') || cat === 'latex') {
+        score += 22; reasons.push('Pressure-relieving layers cushion joints and reduce pain');
+      }
+    }
+
+    // Rating bonus
+    if (p.rating) score += p.rating * 2;
+
+    return { ...p, rawScore: score, reasons: reasons.slice(0, 3) };
+  });
+
+  const sorted = scored.sort((a, b) => b.rawScore - a.rawScore);
+  const maxS = sorted[0]?.rawScore || 1;
+  const minS = sorted[sorted.length - 1]?.rawScore || 0;
+  const range = maxS - minS || 1;
+
+  return sorted.map(p => ({
+    ...p,
+    matchScore: Math.min(97, Math.max(73, 78 + ((p.rawScore - minS) / range) * 19)),
+  }));
+}
+
+/* ─── Component ──────────────────────────────────────────────────── */
+export default function SleepQuiz() {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { showSuccess } = useNotification();
+  const { user } = useAuth();
+
+  const [step, setStep]         = useState(0);
+  const [answers, setAnswers]   = useState({});
+  const [products, setProducts] = useState([]);
+  const [results, setResults]   = useState([]);
+  const [addedIds, setAddedIds] = useState([]);
+
+  useEffect(() => {
+    api.getProducts().then(setProducts).catch(console.error);
+  }, []);
+
+  const currentQ  = QUESTIONS[step - 1];
+  const selected  = currentQ ? answers[currentQ.key] : null;
+  const totalSteps = QUESTIONS.length;
+
+  const choose = (key, id) => setAnswers(prev => ({ ...prev, [key]: id }));
+
+  const goNext = () => {
+    if (step < totalSteps) { setStep(s => s + 1); }
+    else {
+      setStep(totalSteps + 1); // processing
+      setTimeout(() => {
+        const scored = scoreProducts(products, answers);
+        const top3 = scored.slice(0, 3);
+        setResults(top3);
+        setStep(totalSteps + 2); // results
+
+        // Save results to backend for analytics
+        if (top3.length > 0) {
+          api.saveQuizResults({
+            answers,
+            recommendedProductId: top3[0]._id,
+            userId: user?._id
+          }).catch(err => console.error("Error saving quiz results:", err));
+        }
+      }, 2400);
+    }
+  };
+
+  const restart = () => {
+    setStep(0); setAnswers({}); setResults([]); setAddedIds([]);
+  };
+
+  /* ── Layout wrapper ── */
+  return (
+    <div style={S.page}>
+      <style>{fadeUp}</style>
+      {/* Background blobs */}
+      <div style={S.blob1} />
+      <div style={S.blob2} />
+      <div style={S.blob3} />
+
+      {/* Header bar */}
+      {step > 0 && step <= totalSteps + 2 && (
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px' }}>
+          <button
+            onClick={() => step <= 1 ? navigate('/') : step === totalSteps + 2 ? restart() : setStep(s => s - 1)}
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '8px 14px', color: '#fff', cursor: 'pointer', fontFamily: '"DM Sans", sans-serif', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600 }}
+          >
+            ← {step === totalSteps + 2 ? 'Retake' : 'Back'}
+          </button>
+
+          {step >= 1 && step <= totalSteps && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: S.muted, fontSize: '12px', fontFamily: '"DM Sans", sans-serif' }}>{step} / {totalSteps}</span>
+              <div style={{ width: '140px', height: '4px', borderRadius: '999px', background: 'rgba(255,255,255,0.12)' }}>
+                <div style={{ height: '100%', borderRadius: '999px', background: `linear-gradient(90deg, ${S.accent}, ${S.blue})`, width: `${(step / totalSteps) * 100}%`, transition: 'width 0.4s ease' }} />
+              </div>
+            </div>
+          )}
+
+          {step === totalSteps + 2 && (
+            <div style={S.pill}>✨ AI Results</div>
+          )}
+
+          <div style={{ width: '80px' }} />
+        </div>
+      )}
+
+      {/* Content area */}
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: step === totalSteps + 2 ? '860px' : '480px', margin: '0 auto', padding: '0 20px 60px' }}>
+
+        {/* ── LANDING ── */}
+        {step === 0 && <Landing onStart={() => setStep(1)} />}
+
+        {/* ── QUESTIONS ── */}
+        {step >= 1 && step <= totalSteps && (
+          <QuestionScreen
+            q={currentQ}
+            selected={answers[currentQ.key]}
+            onChoose={(id) => choose(currentQ.key, id)}
+            onNext={goNext}
+          />
+        )}
+
+        {/* ── PROCESSING ── */}
+        {step === totalSteps + 1 && <Processing count={products.length} />}
+
+        {/* ── RESULTS ── */}
+        {step === totalSteps + 2 && (
+          <ResultsScreen results={results} navigate={navigate} addToCart={addToCart} showSuccess={showSuccess} addedIds={addedIds} setAddedIds={setAddedIds} onRetake={restart} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── LANDING SCREEN ─────────────────────────────────────────────── */
+function Landing({ onStart }) {
+  const features = [
+    { icon: '🎯', label: 'AI-Powered Match', desc: 'Our algorithm scores every mattress against your sleep profile.' },
+    { icon: '🛡️', label: '6 Quick Questions', desc: 'Less than 60 seconds to complete.' },
+    { icon: '🏆', label: 'Personalized Results', desc: 'See match %, why it fits you, and alternatives.' },
+  ];
+  return (
+    <div style={{ textAlign: 'center', paddingTop: '60px' }} className="sq-fade">
+      {/* App icon */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '88px', height: '88px', borderRadius: '22px', background: 'linear-gradient(135deg, #7C5CFC, #4FACFE)', boxShadow: '0 0 40px rgba(124,92,252,0.5)', marginBottom: '28px', animation: 'pulsePurple 3s ease-in-out infinite' }}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L14 2Z" fill="white" stroke="white" strokeWidth="0.5" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      <h1 style={{ ...S.h1, fontSize: '36px', margin: '0 0 12px', letterSpacing: '-0.5px' }}>AI Sleep Advisor</h1>
+      <p style={{ color: S.muted, fontSize: '16px', margin: '0 0 40px', lineHeight: 1.6 }}>
+        Answer 6 questions. Get a mattress<br />matched to your body.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '36px' }}>
+        {features.map((f, i) => (
+          <div key={i} className={`sq-fade sq-delay-${i + 1}`} style={{ ...S.glass, padding: '16px 20px', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <span style={{ fontSize: '22px', flexShrink: 0 }}>{f.icon}</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', fontFamily: '"Sora", sans-serif' }}>{f.label}</p>
+              <p style={{ margin: '4px 0 0', color: S.muted, fontSize: '13px', lineHeight: 1.5 }}>{f.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={onStart}
+        style={{ width: '100%', padding: '17px', borderRadius: '999px', border: 'none', background: '#fff', color: '#3d1fa8', fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 24px rgba(124,92,252,0.3)' }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,92,252,0.5)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(124,92,252,0.3)'; }}
+      >
+        Start the Quiz <span style={{ fontSize: '18px' }}>→</span>
+      </button>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', marginTop: '14px' }}>No sign-up required · Free</p>
+    </div>
+  );
+}
+
+/* ─── QUESTION SCREEN ────────────────────────────────────────────── */
+function QuestionScreen({ q, selected, onChoose, onNext }) {
+  const cols = q.options.length <= 2 ? 1 : 2;
+  return (
+    <div style={{ paddingTop: '20px' }} className="sq-fade">
+      <h2 style={{ ...S.h2, fontSize: '26px', textAlign: 'center', marginBottom: '32px', lineHeight: 1.3 }}>
+        {q.title}
+      </h2>
+
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '12px', marginBottom: '32px' }}>
+        {q.options.map((opt, i) => {
+          const isSelected = selected === opt.id;
+          return (
+            <button
+              key={opt.id}
+              onClick={() => onChoose(opt.id)}
+              className={`sq-fade sq-delay-${Math.min(i + 1, 4)}`}
+              style={{
+                ...(isSelected ? S.glassSelected : S.glass),
+                padding: '18px 16px',
+                cursor: 'pointer',
+                textAlign: 'center',
+                border: isSelected ? '1.5px solid rgba(124,92,252,0.7)' : '1px solid rgba(255,255,255,0.12)',
+                transition: 'all 0.2s ease',
+                transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+              }}
+              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
+              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+            >
+              <div style={{ fontSize: '30px', marginBottom: '8px' }}>{opt.icon}</div>
+              <div style={{ fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>{opt.label}</div>
+              <div style={{ color: S.muted, fontSize: '12px' }}>{opt.desc}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!selected}
+        style={{
+          width: '100%', padding: '16px', borderRadius: '14px', border: 'none',
+          background: selected ? `linear-gradient(135deg, ${S.accent}, ${S.blue})` : 'rgba(255,255,255,0.1)',
+          color: selected ? '#fff' : 'rgba(255,255,255,0.35)',
+          fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '15px',
+          cursor: selected ? 'pointer' : 'not-allowed',
+          transition: 'all 0.3s ease',
+          boxShadow: selected ? '0 4px 20px rgba(124,92,252,0.4)' : 'none',
+        }}
+      >
+        Next →
+      </button>
+    </div>
+  );
+}
+
+/* ─── PROCESSING SCREEN ──────────────────────────────────────────── */
+function Processing({ count }) {
+  const steps = ['Analyzing sleep position…', 'Calculating support needs…', `Scoring ${count} mattresses…`, 'Generating your matches…'];
+  return (
+    <div style={{ textAlign: 'center', paddingTop: '80px' }} className="sq-fade">
+      {/* Spinner ring */}
+      <div style={{ position: 'relative', width: '96px', height: '96px', margin: '0 auto 36px' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,92,252,0.25) 0%, transparent 70%)', animation: 'pulsePurple 2s ease-in-out infinite' }} />
+        <svg style={{ animation: 'spin 1.2s linear infinite', position: 'relative', zIndex: 1 }} width="96" height="96" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+          <circle cx="48" cy="48" r="40" fill="none" stroke="url(#g)" strokeWidth="5" strokeLinecap="round" strokeDasharray="60 190" />
+          <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#7C5CFC"/><stop offset="100%" stopColor="#4FACFE"/></linearGradient></defs>
+        </svg>
+      </div>
+
+      <h2 style={{ ...S.h2, fontSize: '22px', marginBottom: '10px' }}>Analyzing your sleep profile…</h2>
+      <p style={{ color: S.muted, fontSize: '14px', marginBottom: '36px' }}>Our algorithm is finding your perfect matches</p>
+
+      <div style={{ ...S.glass, padding: '20px 24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {steps.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: S.muted, fontSize: '13px' }}>
+            <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #7C5CFC, #4FACFE)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/></svg>
+            </div>
+            {s}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── RESULTS SCREEN ─────────────────────────────────────────────── */
+function ResultsScreen({ results, navigate, addToCart, showSuccess, addedIds, setAddedIds, onRetake }) {
+  if (!results.length) return null;
+  return (
+    <div style={{ paddingTop: '10px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '36px' }} className="sq-fade">
+        <div style={S.pill}>✨ Your Top Matches</div>
+        <h1 style={{ ...S.h1, fontSize: '32px', margin: '16px 0 8px' }}>Your Perfect Sleep Matches</h1>
+        <p style={{ color: S.muted, fontSize: '15px' }}>Ranked by compatibility with your sleep profile</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+        {results.map((p, i) => (
+          <ResultCard
+            key={p._id}
+            product={p}
+            rank={i}
+            added={addedIds.includes(p._id)}
+            onAdd={() => {
+              addToCart(p);
+              setAddedIds(prev => [...prev, p._id]);
+              showSuccess(`${p.name} added to cart! 🎉`);
+            }}
+            onView={() => navigate(`/product/${p._id}`)}
+          />
+        ))}
+      </div>
+
+      {/* Retake CTA */}
+      <div className="sq-fade" style={{ ...S.glass, padding: '32px 24px', textAlign: 'center', borderRadius: '20px' }}>
+        <div style={{ fontSize: '40px', marginBottom: '12px' }}>🌙</div>
+        <h3 style={{ ...S.h2, fontSize: '18px', margin: '0 0 8px' }}>Not sure about these?</h3>
+        <p style={{ color: S.muted, fontSize: '14px', margin: '0 0 20px' }}>Retake the quiz with different answers for new results.</p>
+        <button
+          onClick={onRetake}
+          style={{ padding: '12px 28px', borderRadius: '999px', border: '1.5px solid rgba(124,92,252,0.5)', background: 'rgba(124,92,252,0.15)', color: '#b8a0fc', fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,92,252,0.28)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(124,92,252,0.15)'}
+        >
+          ↺ Retake Quiz
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── RESULT CARD ────────────────────────────────────────────────── */
+function ResultCard({ product, rank, added, onAdd, onView }) {
+  const score = product.matchScore;
+  const medals = ['🥇', '🥈', '🥉'];
+  const rankLabels = ['Best Match', 'Runner Up', 'Also Great'];
+
+  const barColor = score >= 90 ? '#22c55e' : score >= 82 ? S.accent : S.blue;
+
+  return (
+    <div
+      className={`sq-fade sq-delay-${rank + 1}`}
+      style={{ ...S.glass, borderRadius: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'transform 0.25s, box-shadow 0.25s' }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(124,92,252,0.2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+    >
+      {/* Top strip */}
+      <div style={{ background: rank === 0 ? 'linear-gradient(90deg, #7C5CFC, #4FACFE)' : 'rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', fontWeight: 700, fontFamily: '"Sora", sans-serif', color: rank === 0 ? '#fff' : S.muted }}>
+          {medals[rank]} {rankLabels[rank]}
+        </span>
+        <span style={{ fontSize: '13px', fontWeight: 800, fontFamily: '"Sora", sans-serif', background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '999px', color: '#fff' }}>
+          {score.toFixed(0)}% Match
+        </span>
+      </div>
+
+      {/* Product image */}
+      <div style={{ background: 'rgba(255,255,255,0.04)', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '160px' }}>
+        <Image src={constructImageUrl(product.image)} alt={product.name} style={{ maxHeight: '130px', maxWidth: '100%', objectFit: 'contain' }} />
+      </div>
+
+      {/* Details */}
+      <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {product.category && (
+          <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9a7bfc', background: 'rgba(124,92,252,0.15)', padding: '3px 10px', borderRadius: '6px', width: 'fit-content' }}>
+            {product.category}
+          </span>
+        )}
+
+        <h4 style={{ ...S.h2, fontSize: '16px', margin: 0, lineHeight: 1.3 }}>{product.name}</h4>
+
+        {/* Match bar */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '12px', color: S.muted }}>Match Score</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: barColor }}>{score.toFixed(0)}%</span>
+          </div>
+          <div style={{ height: '5px', borderRadius: '999px', background: 'rgba(255,255,255,0.1)' }}>
+            <div style={{ height: '100%', borderRadius: '999px', background: `linear-gradient(90deg, ${barColor}, ${barColor}aa)`, width: `${score}%`, transition: 'width 1s ease' }} />
+          </div>
+        </div>
+
+        {/* Reasons */}
+        {product.reasons && product.reasons.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {product.reasons.map((r, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: S.muted, lineHeight: 1.5 }}>
+                <span style={{ color: '#7C5CFC', flexShrink: 0, marginTop: '1px' }}>✓</span>
+                <span>{r}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Price */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: '"Sora", sans-serif' }}>{formatPrice(product.price)}</p>
+            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#4ade80' }}>✓ In Stock · Free Delivery</p>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+          <button
+            onClick={onView}
+            style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.18)', background: 'transparent', color: '#fff', fontFamily: '"DM Sans", sans-serif', fontWeight: 600, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            View →
+          </button>
+          <button
+            onClick={onAdd}
+            style={{ flex: 2, padding: '10px', borderRadius: '10px', border: 'none', background: added ? 'rgba(34,197,94,0.2)' : 'linear-gradient(135deg, #7C5CFC, #4FACFE)', color: '#fff', fontFamily: '"Sora", sans-serif', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'opacity 0.2s', border: added ? '1px solid rgba(34,197,94,0.5)' : 'none' }}
+            onMouseEnter={e => { if (!added) e.currentTarget.style.opacity = '0.85'; }}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            {added ? '✓ Added!' : '🛒 Add to Cart'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

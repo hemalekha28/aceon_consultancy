@@ -109,6 +109,7 @@ const SalesAnalytics = () => {
 
   // Real data state
   const [dashData, setDashData] = useState(null);
+  const [predictionData, setPredictionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -122,10 +123,17 @@ const SalesAnalytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get('/analytics/sales-dashboard');
-      const data = res.data?.data;
+      // Fetch both dashboard and prediction data
+      const [dashRes, predRes] = await Promise.all([
+        api.get('/analytics/sales-dashboard'),
+        api.getSalesPrediction()
+      ]);
+
+      const data = dashRes.data?.data;
       if (!data) throw new Error('Invalid response from server');
+      
       setDashData(data);
+      setPredictionData(predRes.data);
       setStockItems(data.lowStockProducts || []);
       setLastUpdated(new Date());
     } catch (err) {
@@ -245,6 +253,86 @@ const SalesAnalytics = () => {
         <Spinner />
       ) : (
         <>
+          {/* ══════════════════ SECTION 0: SALES FORECASTING (ML) ══════════════════ */}
+          {predictionData && (
+            <div className="grid grid-3" style={{ gap: '2rem', marginBottom: '2rem' }}>
+              {/* Prediction Card */}
+              <div className="card" style={{ 
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', 
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.4)'
+              }}>
+                <div className="card-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'none' }}>
+                  <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiTrendingUp />
+                    Forecasting (Next Month)
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>Predicted Revenue</span>
+                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>{formatINR(predictionData.prediction.nextMonthRevenue)}</div>
+                  </div>
+                  <div className="grid grid-2" style={{ gap: '1rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Expected Orders</span>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{predictionData.prediction.nextMonthOrders}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Growth</span>
+                      <div style={{ 
+                        fontSize: '1.25rem', 
+                        fontWeight: 700, 
+                        color: predictionData.prediction.growthPercentage >= 0 ? '#4ade80' : '#f87171' 
+                      }}>
+                        {predictionData.prediction.growthPercentage >= 0 ? '+' : ''}{predictionData.prediction.growthPercentage}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Insights Section */}
+              <div className="card" style={{ gridColumn: 'span 2' }}>
+                <div className="card-header">
+                  <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiBarChart2 color="#7C5CFC" />
+                    AI Demand Insights
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <div className="grid grid-2" style={{ gap: '1.5rem' }}>
+                    <div style={{ borderRight: '1px solid var(--border-light)', paddingRight: '1.5rem' }}>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Best Selling Mattress</span>
+                        <div style={{ fontWeight: 700, fontSize: '1.1rem', marginTop: '6px', color: 'var(--primary)' }}>{predictionData.insights.bestSellingProduct}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Sales Trend</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '1.1rem', marginTop: '6px', color: predictionData.insights.salesTrend === 'increasing' ? 'var(--success-dark)' : 'var(--danger-dark)' }}>
+                          {predictionData.insights.salesTrend === 'increasing' ? <FiTrendingUp /> : <FiTrendingDown />}
+                          {predictionData.insights.salesTrend.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Inventory Status</span>
+                        <div style={{ fontWeight: 700, fontSize: '1.1rem', marginTop: '6px', color: predictionData.insights.inventoryStatus === 'Healthy' ? 'var(--success-dark)' : 'var(--secondary)' }}>{predictionData.insights.inventoryStatus}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Stock Recommendation</span>
+                        <div style={{ fontSize: '0.9rem', marginTop: '6px', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+                          {predictionData.insights.stockRecommendation}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ══════════════════ SECTION 1: REVENUE REPORTS ══════════════════ */}
           <div className="card" style={{ marginBottom: '2rem' }}>
             <div className="card-header">

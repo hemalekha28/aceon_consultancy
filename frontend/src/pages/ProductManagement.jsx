@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle, FiTrendingUp, FiInfo, FiTag, FiBarChart2 } from 'react-icons/fi';
 import { api } from '../utils/api';
 import { formatPrice } from '../utils/helpers';
 import { constructImageUrl } from '../utils/imageUtils';
@@ -20,6 +20,9 @@ const ProductManagement = () => {
     image: '',
     stock: ''
   });
+  const [predictionData, setPredictionData] = useState(null);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [loadingPrediction, setLoadingPrediction] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -141,6 +144,42 @@ const ProductManagement = () => {
         showNotification('error', 'Failed to delete product. Please try again.');
       }
     }
+  };
+
+  const handlePredictPrice = async (productId) => {
+    try {
+      setLoadingPrediction(true);
+      setShowPredictionModal(true);
+      const data = await api.getPricePrediction(productId);
+      setPredictionData(data.data);
+    } catch (error) {
+      console.error('Error fetching prediction:', error);
+      showNotification('error', 'Failed to fetch pricing prediction.');
+      setShowPredictionModal(false);
+    } finally {
+      setLoadingPrediction(false);
+    }
+  };
+
+  const handleApplyPredictedPrice = () => {
+    if (!predictionData) return;
+    
+    const product = products.find(p => p._id === predictionData.product.id || p.id === predictionData.product.id);
+    if (!product) return;
+
+    // Open the existing edit modal with all fields and the NEW suggested price
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      price: predictionData.prediction.suggestedPrice.toString(),
+      category: product.category,
+      description: product.description,
+      image: product.image,
+      stock: product.stock.toString()
+    });
+
+    setShowPredictionModal(false);
+    setShowModal(true);
   };
 
   const resetForm = () => {
@@ -328,6 +367,14 @@ const ProductManagement = () => {
                             <FiEdit />
                           </button>
                           <button
+                            onClick={() => handlePredictPrice(product._id || product.id)}
+                            className="btn btn-sm btn-info"
+                            style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+                            title="Analyze Pricing"
+                          >
+                            <FiTrendingUp />
+                          </button>
+                          <button
                             onClick={() => handleDelete(product._id || product.id, product.name)}
                             className="btn btn-sm btn-danger"
                             title="Delete Product"
@@ -482,6 +529,122 @@ const ProductManagement = () => {
                   : (editingProduct ? 'Update Product' : 'Add Product')
                 }
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Pricing Prediction Modal */}
+      {showPredictionModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '650px' }}>
+            <div className="modal-header">
+              <h3 className="modal-title">
+                <FiTrendingUp style={{ marginRight: '0.5rem' }} />
+                AI Dynamic Pricing Analysis
+              </h3>
+              <button onClick={() => setShowPredictionModal(false)} className="modal-close">×</button>
+            </div>
+            
+            <div className="modal-body">
+              {loadingPrediction ? (
+                <div style={{ padding: '3rem', textAlign: 'center' }}>
+                  <div className="spinner" style={{ margin: '0 auto 1.5rem' }}></div>
+                  <p>Analyzing demand patterns, stock velocity, and competitor trends...</p>
+                </div>
+              ) : predictionData ? (
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                  <div style={{ 
+                    background: 'var(--bg-secondary)', 
+                    padding: '1.5rem', 
+                    borderRadius: '12px', 
+                    marginBottom: '1.5rem',
+                    border: '1px solid var(--border-light)'
+                  }}>
+                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>{predictionData.product.name}</h4>
+                    <div className="grid grid-2" style={{ gap: '1rem' }}>
+                      <div className="stat-card" style={{ padding: '1rem', background: 'white' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Suggested Discount</span>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--accent)' }}>
+                          {predictionData.prediction.suggestedDiscount}
+                        </div>
+                      </div>
+                      <div className="stat-card" style={{ padding: '1rem', background: 'white' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Optimized Price</span>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>
+                          {formatPrice(predictionData.prediction.suggestedPrice)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-3" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Market Index</div>
+                      <div style={{ fontWeight: '700', color: parseFloat(predictionData.metrics.competitorIndex) > 1 ? '#ef4444' : '#10b981' }}>
+                        {predictionData.metrics.competitorIndex}x
+                      </div>
+                    </div>
+                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Conv. Rate</div>
+                      <div style={{ fontWeight: '700', color: '#6366f1' }}>{predictionData.metrics.conversionRate}</div>
+                    </div>
+                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Units Sold</div>
+                      <div style={{ fontWeight: '700', color: '#334155' }}>{predictionData.metrics.totalSales}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h5 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <FiBarChart2 size={16} color="var(--primary)" />
+                      AI Insights
+                    </h5>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {predictionData.insights.map((insight, i) => (
+                        <div key={i} style={{ 
+                          display: 'flex', 
+                          alignItems: 'start', 
+                          gap: '0.75rem', 
+                          fontSize: '0.9rem', 
+                          color: 'var(--text-secondary)',
+                          padding: '0.5rem',
+                          background: '#f8fafc',
+                          borderRadius: '6px'
+                        }}>
+                          <FiInfo size={16} color="var(--accent)" style={{ marginTop: '2px', flexShrink: 0 }} />
+                          {insight}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    background: 'rgba(99, 102, 241, 0.05)', 
+                    padding: '1rem', 
+                    borderRadius: '8px', 
+                    border: '1px dashed var(--accent)',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      Estimated Volume Lift: <strong>{predictionData.prediction.potentialVolumeLift}</strong> if price is adjusted.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p>No analysis data available.</p>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button onClick={() => setShowPredictionModal(false)} className="btn btn-secondary">Close</button>
+              {predictionData && (
+                <button 
+                  onClick={handleApplyPredictedPrice}
+                  className="btn btn-primary"
+                >
+                  Use Suggested Price
+                </button>
+              )}
             </div>
           </div>
         </div>

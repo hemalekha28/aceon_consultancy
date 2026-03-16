@@ -748,6 +748,69 @@ export const api = {
       return {};
     }
   },
+
+  // Dynamic Pricing Predictor
+  getPricePrediction: async (productId) => {
+    try {
+      const response = await API.get(`/products/price-predictor/${productId}`);
+      return response.data;
+    } catch (err) {
+      console.error("API error fetching price prediction:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch price prediction');
+    }
+  },
+
+  // Sales Prediction & Forecasting
+  getSalesPrediction: async () => {
+    try {
+      const response = await API.get('/analytics/sales-prediction');
+      return response.data;
+    } catch (err) {
+      console.error("API error fetching sales prediction:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch sales prediction');
+    }
+  },
+
+  // New ML Features
+  getDemandForecast: async () => {
+    try {
+      const response = await API.get('/analytics/demand-forecast');
+      return response.data;
+    } catch (err) {
+      console.error("API error fetching demand forecast:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch demand forecast');
+    }
+  },
+
+  getSleepAnalytics: async () => {
+    try {
+      const response = await API.get('/analytics/sleep-analytics');
+      return response.data;
+    } catch (err) {
+      console.error("API error fetching sleep analytics:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch sleep analytics');
+    }
+  },
+
+  saveQuizResults: async (data) => {
+    try {
+      const response = await API.post('/ml/save-quiz', data);
+      return response.data;
+    } catch (err) {
+      console.error("API error saving quiz results:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to save quiz results');
+    }
+  },
+
+  getSmartRecommendations: async (productId) => {
+    try {
+      const response = await API.get(`/ml/recommendations/${productId}`);
+      return response.data;
+    } catch (err) {
+      console.error("API error fetching smart recommendations:", err);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to fetch smart recommendations');
+    }
+  },
 };
 
 // Export both the main api and cartAPI separately

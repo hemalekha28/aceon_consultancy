@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/authContext';
 import { useCart } from './context/cartContext';
 import { useNotification } from './context/notificationContext';
@@ -26,6 +26,8 @@ import ProductListing from './pages/ProductListing';
 import ComparePage from './pages/ComparePage';
 import SimpleChatbot from './components/SimpleChatbot';
 import SleepQuiz from './pages/SleepQuiz';
+import MattressCustomizer from './pages/MattressCustomizer';
+
 
 // Role selection component
 const RoleSelector = ({ onRoleSelect }) => {
@@ -162,16 +164,18 @@ function App() {
 
 function AppContent({ selectedRole }) {
   const { user, userRole } = useAuth();
+  const location = useLocation();
+  const isQuiz = location.pathname === '/quiz';
 
   return (
     <>
       {/* Connect notification system with cart */}
       <NotificationConnector />
 
-      {userRole !== 'admin' && <Header />}
+      {userRole !== 'admin' && !isQuiz && <Header />}
 
-      {/* Compare floating button - available on all user pages */}
-      {userRole !== 'admin' && <CompareFloatingButton />}
+      {/* Compare floating button - available on all user pages except quiz */}
+      {userRole !== 'admin' && !isQuiz && <CompareFloatingButton />}
 
       <Routes>
         {/* Public Routes */}
@@ -188,6 +192,8 @@ function AppContent({ selectedRole }) {
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/quiz" element={<SleepQuiz />} />
+            <Route path="/customize" element={<MattressCustomizer />} />
+
             <Route
               path="/checkout"
               element={
@@ -287,7 +293,7 @@ function AppContent({ selectedRole }) {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {userRole !== 'admin' && <Footer />}
+      {userRole !== 'admin' && !isQuiz && <Footer />}
 
       {/* Chatbot - Available for all users */}
       {user && <SimpleChatbot />}

@@ -4129,6 +4129,93 @@ body {
   overflow: hidden;
 }
 
+.admin-layout.admin-dark {
+  background: radial-gradient(circle at top right, #1a1a4e 0%, #070718 100%);
+  color: white;
+}
+
+.admin-layout.admin-dark .main-content {
+  background: transparent;
+}
+
+.admin-layout.admin-dark h1, 
+.admin-layout.admin-dark h2, 
+.admin-layout.admin-dark h3 {
+  color: white;
+}
+
+.admin-layout.admin-dark .card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.admin-layout.admin-dark .card-header {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-layout.admin-dark .stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 4px solid var(--accent);
+}
+
+.admin-layout.admin-dark .stat-number {
+  color: white;
+}
+
+.admin-layout.admin-dark .stat-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-layout.admin-dark .sidebar {
+  background: rgba(10, 10, 46, 0.8);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-layout.admin-dark .sidebar-nav a {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-layout.admin-dark .sidebar-nav a:hover,
+.admin-layout.admin-dark .sidebar-nav a.active {
+  background: rgba(124, 92, 252, 0.2);
+  color: #7C5CFC;
+}
+
+.admin-layout.admin-dark .table th {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-layout.admin-dark .table td {
+  color: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-layout.admin-dark .table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-layout.admin-dark .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.admin-layout.admin-dark .btn-ghost {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-layout.admin-dark .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
 /* ========================================
    SIDEBAR
    ======================================== */
@@ -4344,4 +4431,27 @@ body {
 
 .table tr:hover {
   background-color: var(--bg-tertiary);
+}
+
+/* WhatsApp Ordering Button */
+.btn-whatsapp {
+  background: #25d366 !important;
+  color: white !important;
+  border: 1px solid #128c7e !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.25) !important;
+}
+
+.btn-whatsapp:hover {
+  background: #128c7e !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35) !important;
+  color: white !important;
 }
