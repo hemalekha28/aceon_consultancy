@@ -647,31 +647,31 @@ const ProductManagement = () => {
                 <p>No analysis data available.</p>
               )}
             </div>
-            
+
             <div className="modal-footer">
               <button onClick={() => setShowPredictionModal(false)} className="btn btn-secondary">Close</button>
               {predictionData && (
-                <button 
+                <button
                   onClick={handleApplyPredictedPrice}
                   className="btn btn-primary"
                 >
                   Use Suggested Price
-
-        {/* Bulk Upload Modal */}
-        {showBulkUpload && (
-          <BulkProductUpload
-            onClose={() => setShowBulkUpload(false)}
-            onSuccess={() => {
-              setShowBulkUpload(false);
-              loadProducts();
-            }}
-          />
-        )}
+                </button>
               )}
             </div>
           </div>
         </div>
->>>>>>> origin/emi-feature
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUpload && (
+        <BulkProductUpload
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={() => {
+            setShowBulkUpload(false);
+            loadProducts();
+          }}
+        />
       )}
     </div>
   );

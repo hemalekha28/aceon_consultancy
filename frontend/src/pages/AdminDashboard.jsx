@@ -992,23 +992,13 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* Top Products */}
+        {/* Top Selling Products */}
         <div className="card" style={{ background: 'white', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' }}>
           <div className="card-header" style={{ background: 'linear-gradient(90deg, #36d1c4 0%, #1e3c72 100%)', color: 'white', borderBottom: 'none', borderRadius: '12px 12px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ color: 'white', margin: 0 }}>Top Rated Products</h3>
-              <Link to="/admin/products" className="btn btn-sm btn-secondary">
-                View All
-=======
-        {/* Top Selling Products */}
-        <div className="card">
-          <div className="card-header">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Top Selling Products</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Top Selling Products</h3>
               <Link to="/admin/analytics" className="btn btn-sm btn-secondary">
                 Analyze More
->>>>>>> origin/emi-feature
               </Link>
             </div>
           </div>
