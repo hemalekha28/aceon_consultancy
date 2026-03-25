@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPackage, FiUsers, FiShoppingCart, FiDollarSign, FiTrendingUp, FiDownload, FiBarChart2, FiRefreshCw, FiTag } from 'react-icons/fi';
 import {
@@ -16,9 +16,9 @@ import {
 } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import * as XLSX from 'xlsx';
-import { api } from '../utils/api';
 import { formatPrice, formatDate, getStatusColor } from "../utils/helpers";
 import { constructImageUrl } from '../utils/imageUtils';
+import { useAdminAnalytics } from '../context/adminAnalyticsContext';
 
 ChartJS.register(
   CategoryScale,
@@ -34,47 +34,16 @@ ChartJS.register(
 );
 
 const AdminDashboard = () => {
-  const [analytics, setAnalytics] = useState(null);
-  const [prediction, setPrediction] = useState(null);
-  const [demandForecast, setDemandForecast] = useState(null);
-  const [sleepAnalytics, setSleepAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    analytics,
+    prediction,
+    demandForecast,
+    sleepAnalytics,
+    loading,
+    lastUpdated,
+    refreshAnalytics,
+  } = useAdminAnalytics();
   const [chartType, setChartType] = useState('line');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-
-  useEffect(() => {
-    loadAnalytics();
-
-    // Set up real-time polling every 60 seconds
-    const intervalId = setInterval(() => {
-      loadAnalytics();
-    }, 60000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const loadAnalytics = async () => {
-    try {
-      const [analyticsData, predictionData, demandData, sleepData] = await Promise.all([
-        api.getAnalytics(),
-        api.getSalesPrediction(),
-        api.getDemandForecast(),
-        api.getSleepAnalytics()
-      ]);
-      
-      const normalized = analyticsData && typeof analyticsData === 'object' && 'data' in analyticsData ? analyticsData.data : analyticsData;
-      setAnalytics(normalized);
-      setPrediction(predictionData.data);
-      setDemandForecast(demandData.data);
-      setSleepAnalytics(sleepData.data);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error('AdminDashboard: Error loading analytics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Local tiny fallback image to avoid external placeholder DNS failures
   const createFallbackImage = () => {
@@ -338,7 +307,7 @@ const AdminDashboard = () => {
             Please check your connection and try again.
           </p>
           <button
-            onClick={loadAnalytics}
+            onClick={refreshAnalytics}
             className="btn btn-primary"
             style={{
               padding: '0.625rem 1.5rem',
@@ -364,7 +333,7 @@ const AdminDashboard = () => {
       minHeight: '100vh',
       padding: '2rem 0'
     }}>
-      <div className="container" style={{ padding: '0 2rem' }}>
+      <div style={{ padding: '0 2rem', width: '100%', maxWidth: '100%' }}>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -565,7 +534,7 @@ const AdminDashboard = () => {
                 Download Report
               </button>
               <button
-                onClick={loadAnalytics}
+                onClick={refreshAnalytics}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

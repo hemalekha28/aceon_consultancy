@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import LoginModal from '../components/LoginModal';
+import RegisterModal from '../components/RegisterModal';
 import {
   FiShoppingBag,
   FiTruck,
@@ -19,6 +21,13 @@ const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [activeCoupons, setActiveCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  // Expose modal openers for Header via window (quick solution for demo, ideally use context)
+  useEffect(() => {
+    window.openLoginModal = () => setShowLogin(true);
+    window.openRegisterModal = () => setShowRegister(true);
+  }, []);
 
   useEffect(() => {
     const loadFeaturedProducts = async () => {
@@ -74,6 +83,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} onSwitchToRegister={() => { setShowLogin(false); setShowRegister(true); }} />
+      <RegisterModal open={showRegister} onClose={() => setShowRegister(false)} onSwitchToLogin={() => { setShowRegister(false); setShowLogin(true); }} />
       {/* Hero Carousel */}
       <Carousel
         slides={[

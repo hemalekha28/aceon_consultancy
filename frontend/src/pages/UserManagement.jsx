@@ -208,7 +208,7 @@ const UserManagement = () => {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="table">
+              <table className="table admin-users-table">
                 <thead>
                   <tr>
                     <th>User</th>

@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema({
   photoURL: {
     type: String
     // Profile picture URL from Google
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
   }
 }, {
   timestamps: true

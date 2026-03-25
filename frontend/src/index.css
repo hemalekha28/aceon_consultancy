@@ -776,13 +776,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #36d1c4 0%, #1e3c72 100%);
 }
 
 .role-selector .container {
   width: 100%;
   max-width: 800px;
   padding: 2rem;
+  background: transparent;
 }
 
 /* Hero Section */
@@ -4279,14 +4280,12 @@ body {
    ======================================== */
 .main-content {
   flex: 1;
-  margin-left: 220px;
-  padding: 2rem;
-  background-color: #f8fafc;
+  margin-left: 220px; /* offset fixed sidebar width on desktop */
+  padding: 0;
+  background-color: transparent;
   overflow-y: auto;
   overflow-x: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  display: block;
   height: 100vh;
 }
 
@@ -4305,8 +4304,8 @@ body {
   }
 
   .main-content {
-    margin-left: 200px;
-    padding: 1.5rem;
+    margin-left: 200px; /* match narrower sidebar on tablet */
+    padding: 1rem;
   }
 }
 
@@ -4331,7 +4330,7 @@ body {
 
   .main-content {
     margin-left: 0;
-    padding: 1rem;
+    padding: 0.75rem;
     height: auto;
     min-height: calc(100vh - 200px);
   }
@@ -4408,6 +4407,21 @@ body {
 
 .table tr:hover {
   background-color: var(--bg-tertiary);
+}
+
+/* Admin Products: ensure header labels are white for visibility */
+.admin-products-table th {
+  color: var(--white);
+}
+
+/* Admin Users: ensure header labels are white for visibility */
+.admin-users-table th {
+  color: var(--white);
+}
+
+/* Admin Coupons: ensure header labels are white for visibility */
+.admin-coupons-table th {
+  color: var(--white);
 }
 
 /* WhatsApp Ordering Button */

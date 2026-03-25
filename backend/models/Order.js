@@ -29,7 +29,12 @@ const orderSchema = new mongoose.Schema({
     address: { type: String, required: true },
     city: { type: String, required: true },
     postalCode: { type: String, required: true },
-    country: { type: String, required: true }
+    country: { type: String, required: true },
+    // Optional geolocation coordinates for delivery address
+    coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number }
+    }
   },
   subtotal: {
     type: Number,
@@ -117,6 +122,11 @@ const orderSchema = new mongoose.Schema({
       utr: { type: String }
     }
   },
+  driverLocation: {
+    latitude: { type: Number },
+    longitude: { type: Number },
+    updatedAt: { type: Date }
+  },
   coupon: {
     code: { type: String, uppercase: true },
     discountAmount: { type: Number, default: 0 }
@@ -124,7 +134,4 @@ const orderSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-module.exports = mongoose.model('Order', orderSchema);
-
 module.exports = mongoose.model('Order', orderSchema);

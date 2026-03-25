@@ -3,8 +3,10 @@ import { FiEye, FiFilter, FiRefreshCw, FiPackage, FiTruck, FiCheckCircle, FiXCir
 import { api } from '../utils/api';
 import { formatPrice, formatDate, getStatusColor } from '../utils/helpers';
 import { constructImageUrl } from '../utils/imageUtils';
+import { useAdminAnalytics } from '../context/adminAnalyticsContext';
 
 const OrderManagement = () => {
+  const { refreshAnalytics } = useAdminAnalytics();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,6 +72,14 @@ const OrderManagement = () => {
         
         // Refresh the full orders list to ensure consistency
         await loadOrders(true);
+
+        // Immediately refresh admin analytics so the dashboard reflects this change
+        try {
+          await refreshAnalytics();
+        } catch (e) {
+          // Any analytics refresh error is already handled/logged in the context
+          console.error('OrderManagement: Error refreshing analytics after status update:', e);
+        }
         
         // Also update selected order if it's open
         if (selectedOrder && (selectedOrder._id === orderId || selectedOrder.id === orderId)) {
@@ -257,13 +267,76 @@ const OrderManagement = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Date</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Order ID
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Customer
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Date
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Items
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Total
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontWeight: 600,
+                        textAlign: 'left'
+                      }}
+                    >
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -294,6 +367,13 @@ const OrderManagement = () => {
                             title="View Details"
                           >
                             <FiEye />
+                          </button>
+                          <button
+                            onClick={() => window.open(`/admin/driver-demo/${order.id || order._id}`, '_blank')}
+                            className="btn btn-sm btn-secondary"
+                            title="Open Driver Demo (use on phone)"
+                          >
+                            Demo Driver
                           </button>
                           <select
                             className="form-select"

@@ -555,11 +555,34 @@ export const api = {
 
   // Update order status
   updateOrderStatus: async (orderId, status) => {
-    const response = await makeRequest(`/orders/${orderId}/status`, {
+    try {
+      const response = await makeRequest(`/orders/${orderId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      });
+
+      // Backend returns { success, message, data: { order } }
+      if (response && response.data && response.data.order) {
+        return response.data.order;
+      }
+
+      return response.order || response;
+    } catch (err) {
+      console.error('API error updating order status:', err);
+      // Surface a clear message to the UI
+      const message = err.response?.data?.message || err.message || 'Failed to update order status';
+      throw new Error(message);
+    }
+  },
+
+  // Update driver location for live tracking (admin/demo)
+  updateDriverLocation: async (orderId, { latitude, longitude }) => {
+    const response = await makeRequest(`/orders/${orderId}/driver-location`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ latitude, longitude }),
     });
-    return response.order || response;
+
+    return response.data?.driverLocation || response.driverLocation || response;
   },
 
   // Login

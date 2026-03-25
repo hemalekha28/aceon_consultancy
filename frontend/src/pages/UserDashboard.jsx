@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar, FiTag } from 'react-icons/fi';
+import { FiUser, FiShoppingCart, FiHeart, FiPackage, FiEdit, FiEye, FiMessageSquare, FiStar, FiTag, FiRefreshCw } from 'react-icons/fi';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/cartContext';
@@ -10,6 +10,8 @@ import { formatPrice, formatDate, getStatusColor } from '../utils/helpers';
 import Chatbot from '../components/Chatbot';
 import Image from '../components/Image';
 import { constructImageUrl } from '../utils/imageUtils';
+import OrderTrackingMap from '../components/OrderTrackingMap';
+import { WAREHOUSE_LOCATION } from '../utils/deliveryCalculation';
 
 const MIN_REVIEW_LENGTH = 20;
 
@@ -1057,12 +1059,35 @@ const UserDashboard = () => {
         <div className="card-header" style={{
           background: 'var(--gradient-blue-medium)',
           color: 'white',
-          borderBottom: 'none'
+          borderBottom: 'none',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
           <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <FiShoppingCart size={20} />
             Order History
           </h3>
+          <button
+            type="button"
+            onClick={loadUserData}
+            className="btn btn-sm btn-light"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '999px',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              background: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.4)'
+            }}
+         >
+            <FiRefreshCw size={14} />
+            Refresh
+          </button>
         </div>
         <div className="card-body">
           {loading ? (
@@ -1084,7 +1109,12 @@ const UserDashboard = () => {
               {orders.map((order) => {
                 const statusSteps = ['pending', 'processing', 'shipped', 'delivered'];
                 const currentStatusIndex = statusSteps.indexOf(order.status);
-                
+                const deliveryCoordinates =
+                  order.shippingAddress?.coordinates || order.deliveryLocation?.coordinates || null;
+                const driverLocation = order.driverLocation
+                  ? { lat: order.driverLocation.latitude, lng: order.driverLocation.longitude }
+                  : null;
+
                 return (
                   <div key={order._id} className="card" style={{
                     padding: '1.5rem',
@@ -1216,26 +1246,49 @@ const UserDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Items Count */}
+                    {/* Live Map + Items Count */}
                     <div style={{
                       paddingTop: '1rem',
                       borderTop: '1px solid #e5e7eb',
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontSize: '0.875rem',
-                      color: 'var(--text-secondary)'
+                      flexDirection: 'column',
+                      gap: '0.75rem'
                     }}>
-                      <span>{order.items?.length || 0} item(s)</span>
-                      <span className={`badge badge-${getStatusColor(order.status)}`} style={{
-                        padding: '0.375rem 0.75rem',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        textTransform: 'capitalize'
+                      {deliveryCoordinates?.latitude && deliveryCoordinates?.longitude && (
+                        <div style={{
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          border: '1px solid #e5e7eb'
+                        }}>
+                          <OrderTrackingMap
+                            warehouse={WAREHOUSE_LOCATION}
+                            delivery={{
+                              lat: deliveryCoordinates.latitude,
+                              lng: deliveryCoordinates.longitude,
+                            }}
+                            status={order.status}
+                            driverLocation={driverLocation}
+                          />
+                        </div>
+                      )}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.875rem',
+                        color: 'var(--text-secondary)'
                       }}>
-                        {order.status}
-                      </span>
+                        <span>{order.items?.length || 0} item(s)</span>
+                        <span className={`badge badge-${getStatusColor(order.status)}`} style={{
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'capitalize'
+                        }}>
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

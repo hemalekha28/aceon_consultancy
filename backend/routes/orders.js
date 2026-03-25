@@ -3,7 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
-const { protect } = require('../middlewares/auth');
+const { protect, admin } = require('../middlewares/auth');
 
 const router = express.Router();
 
@@ -31,7 +31,8 @@ router.get('/', protect, async (req, res) => {
       products: order.products, // Keep both for compatibility
       total: order.total,
       status: order.status || 'pending',
-      shippingAddress: order.shippingAddress
+      shippingAddress: order.shippingAddress,
+      driverLocation: order.driverLocation
     }));
 
     res.json({
@@ -83,7 +84,8 @@ router.get('/all', protect, async (req, res) => {
       products: order.products,
       total: order.total,
       status: order.status || 'pending',
-      shippingAddress: order.shippingAddress
+      shippingAddress: order.shippingAddress,
+      driverLocation: order.driverLocation
     }));
 
     res.json(transformedOrders); // Return array directly
@@ -184,6 +186,52 @@ router.put('/:id/status', protect, [
 });
 
 // ==================
+// @desc    Update Driver Location (for live tracking demo)
+// @route   PUT /api/orders/:id/driver-location
+// @access  Private/Admin (demo driver app)
+// ==================
+router.put('/:id/driver-location', protect, admin, async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'latitude and longitude must be numbers'
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    order.driverLocation = {
+      latitude,
+      longitude,
+      updatedAt: new Date()
+    };
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Driver location updated',
+      data: { driverLocation: order.driverLocation }
+    });
+  } catch (error) {
+    console.error('Error updating driver location:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating driver location'
+    });
+  }
+});
+
+// ==================
 // @desc    Get Single Order
 // @route   GET /api/orders/:id
 // @access  Private (order owner)
@@ -228,7 +276,8 @@ router.get('/:id', protect, async (req, res) => {
       products: order.products,
       total: order.total,
       status: order.status || 'pending',
-      shippingAddress: order.shippingAddress
+      shippingAddress: order.shippingAddress,
+      driverLocation: order.driverLocation
     };
 
     res.json({

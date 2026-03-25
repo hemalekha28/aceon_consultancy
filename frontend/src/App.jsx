@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import OrderTracking from './pages/OrderTracking';
+import DriverDemo from './pages/DriverDemo';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement';
@@ -29,6 +30,8 @@ import ComparePage from './pages/ComparePage';
 import SimpleChatbot from './components/SimpleChatbot';
 import SleepQuiz from './pages/SleepQuiz';
 import MattressCustomizer from './pages/MattressCustomizer';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 
 // Role selection component
@@ -152,6 +155,18 @@ function App() {
   };
 
   if (!selectedRole) {
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    // For password reset / forgot password, bypass role selection and load app directly
+    if (path.startsWith('/reset-password') || path.startsWith('/forgot-password')) {
+      return (
+        <Router>
+          <div className="App">
+            <AppContent selectedRole="user" />
+          </div>
+        </Router>
+      );
+    }
+
     return <RoleSelector onRoleSelect={handleRoleSelect} />;
   }
 
@@ -183,6 +198,8 @@ function AppContent({ selectedRole }) {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* User Routes */}
         {userRole === 'user' && (
@@ -264,6 +281,14 @@ function AppContent({ selectedRole }) {
                   <AdminLayout>
                     <OrderManagement />
                   </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/driver-demo/:orderId"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <DriverDemo />
                 </ProtectedRoute>
               }
             />

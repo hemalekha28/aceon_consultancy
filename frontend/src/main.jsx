@@ -9,6 +9,7 @@ import { CartProvider } from './context/cartContext';
 import { NotificationProvider } from './context/notificationContext';
 import { CompareProvider } from './context/compareContext';
 import { WishlistProvider } from './context/wishlistContext';
+import { AdminAnalyticsProvider } from './context/adminAnalyticsContext';
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,9 @@ if (rootElement) {
             <CartProvider>
               <CompareProvider>
                 <WishlistProvider>
-                  <App />
+                  <AdminAnalyticsProvider>
+                    <App />
+                  </AdminAnalyticsProvider>
                 </WishlistProvider>
               </CompareProvider>
             </CartProvider>

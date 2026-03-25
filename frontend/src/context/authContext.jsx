@@ -95,6 +95,48 @@ export const AuthProvider = ({ children, initialRole }) => {
     }
   };
 
+  const requestPasswordReset = async (email) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Unable to send reset link.' };
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return { success: false, message: 'Unable to send reset link. Please try again.' };
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Unable to reset password.' };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { success: false, message: 'Unable to reset password. Please try again.' };
+    }
+  };
+
   const register = async (userData) => {
     try {
       const response = await fetch(`${API_BASE}/auth/register`, {
@@ -227,6 +269,8 @@ export const AuthProvider = ({ children, initialRole }) => {
     setUserRole,
     validateSession,
     loginWithGoogle,
+      requestPasswordReset,
+      resetPassword,
     setUser: (userData) => {
       setUser(userData);
       if (userData) {

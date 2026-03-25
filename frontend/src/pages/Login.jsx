@@ -136,6 +136,9 @@ const Login = ({ isModal, onSwitchToRegister }) => {
               </button>
             </div>
           </div>
+          <div style={{ marginBottom: 16, textAlign: 'right', fontSize: 13 }}>
+            <Link to="/forgot-password" style={{ color: '#0066c0' }}>Forgot your password?</Link>
+          </div>
           <button
             type="submit"
             disabled={loading}

@@ -481,11 +481,6 @@ const Cart = () => {
                   <span>Shipping:</span>
                   <div style={{ textAlign: 'right' }}>
                     <span>{formatPrice(shipping)}</span>
-                    {shipping === 0 && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>
-                        Free shipping!
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -501,11 +496,7 @@ const Cart = () => {
                   <span>{formatPrice(total)}</span>
                 </div>
 
-                {subtotal < 50 && (
-                  <div className="alert alert-warning">
-                    <small>Add {formatPrice(50 - subtotal)} more for free shipping!</small>
-                  </div>
-                )}
+                {/* Removed free-shipping promotional text from order summary */}
               </div>
             </div>
             <div className="card-footer" style={{ padding: '1.5rem' }}>

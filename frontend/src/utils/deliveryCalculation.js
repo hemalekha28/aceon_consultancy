@@ -5,7 +5,7 @@
 
 // Warehouse location - Hosur, Tamil Nadu
 // ACEON Shop: Amman Nagar, 78/7, Denkanikottai Road, Hosur, Krishnagiri-635109, Tamil Nadu, India
-const WAREHOUSE_LOCATION = {
+export const WAREHOUSE_LOCATION = {
   lat: 12.7408,   // Hosur, Tamil Nadu
   lng: 77.8235,
   address: 'Amman Nagar, 78/7, Denkanikottai Road, Hosur, Krishnagiri-635109, Tamil Nadu, India',

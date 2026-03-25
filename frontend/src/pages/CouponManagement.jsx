@@ -147,7 +147,7 @@ const CouponManagement = () => {
                         <div className="text-center" style={{ padding: '2rem' }}>No coupons found. Create your first one!</div>
                     ) : (
                         <div style={{ overflowX: 'auto' }}>
-                            <table className="table">
+                            <table className="table admin-coupons-table">
                                 <thead>
                                     <tr>
                                         <th>Code</th>

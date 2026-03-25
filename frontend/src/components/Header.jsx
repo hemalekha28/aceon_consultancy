@@ -192,20 +192,12 @@ const Header = () => {
 
   return (
     <header className={`navbar-wrapper ${isScrolled ? 'scrolled' : ''}`}>
-      {/* Top Banner */}
+      {/* Top Banner (now minimal, without marketing text/links) */}
       <div className="top-banner">
         <div className="container flex justify-between items-center py-1">
-          <div className="flex items-center gap-4 text-xs font-medium">
-            <span className="flex items-center gap-1"><FiPhone size={12} /> +1 800 ACEON SLEEP</span>
-            <span className="hidden md:flex items-center gap-1"><FiInfo size={12} /> 100-Night Free Trial</span>
-          </div>
-          <div className="text-xs font-bold tracking-wide uppercase">
-            Experience True Comfort with ACEON
-          </div>
-          <div className="hidden md:flex items-center gap-4 text-xs font-medium">
-            <Link to="/about">Our Story</Link>
-            <Link to="/support">Help</Link>
-          </div>
+          <div />
+          <div />
+          <div />
         </div>
       </div>
 
@@ -265,9 +257,6 @@ const Header = () => {
               </Link>
               <Link to="/products" className={isActive('/products') ? 'active' : ''}>
                 Mattresses
-              </Link>
-              <Link to="/products?category=bedding" className={isActive('/products?category=bedding') ? 'active' : ''}>
-                Bedding
               </Link>
               <Link to="/customize" className={isActive('/customize') ? 'active' : ''}>
                 Customize
@@ -330,8 +319,17 @@ const Header = () => {
                 </div>
               ) : (
                 <div className="auth-buttons">
-                  <Link to="/login" className="btn-auth-gradient">Login</Link>
-                  <Link to="/register" className="btn-auth-gradient">Register</Link>
+                  {location.pathname === '/' ? (
+                    <>
+                      <button className="btn-auth-gradient" type="button" onClick={() => window.openLoginModal && window.openLoginModal()}>Login</button>
+                      <button className="btn-auth-gradient" type="button" onClick={() => window.openRegisterModal && window.openRegisterModal()}>Register</button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" className="btn-auth-gradient">Login</Link>
+                      <Link to="/register" className="btn-auth-gradient">Register</Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>

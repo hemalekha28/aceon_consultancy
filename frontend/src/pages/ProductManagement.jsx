@@ -299,7 +299,7 @@ const ProductManagement = () => {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="table">
+              <table className="table admin-products-table">
                 <thead>
                   <tr>
                     <th>Product</th>
@@ -366,8 +366,20 @@ const ProductManagement = () => {
                         </span>
                       </td>
                       <td>
-                        <span className={`badge ${(product.stock ?? 0) > 0 ? 'badge-success' : 'badge-danger'}`}>
-                          {(product.stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock'}
+                        <span
+                          className={`badge ${
+                            (product.stock ?? 0) <= 0
+                              ? 'badge-danger'
+                              : (product.stock ?? 0) <= 5
+                                ? 'badge-warning'
+                                : 'badge-success'
+                          }`}
+                        >
+                          {(product.stock ?? 0) <= 0
+                            ? 'Out of Stock'
+                            : (product.stock ?? 0) <= 5
+                              ? `Low Stock (${product.stock ?? 0})`
+                              : 'In Stock'}
                         </span>
                       </td>
                       <td>

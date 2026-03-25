@@ -2,16 +2,22 @@ const OpenAI = require('openai');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 
-// Initialize OpenAI client lazily
+// Initialize OpenAI-compatible client (Groq or OpenAI) lazily
 let openai = null;
 
 const getOpenAIClient = () => {
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is not set');
+    // Prefer Groq if configured, otherwise fall back to OpenAI
+    const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY or OPENAI_API_KEY environment variable is not set');
     }
+
     openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey,
+      // Use Groq's OpenAI-compatible endpoint by default, but allow override
+      baseURL: process.env.OPENAI_BASE_URL || 'https://api.groq.com/openai/v1',
     });
   }
   return openai;
@@ -105,10 +111,12 @@ RESPONSE GUIDELINES:
 
 Answer the customer's question: "${message}"`;
 
-    // Call OpenAI API
+    // Call OpenAI / Groq-compatible API
     const openaiClient = getOpenAIClient();
+    const model = process.env.GROQ_MODEL || process.env.OPENAI_MODEL || 'llama-3.3-70b-versatile';
+
     const completion = await openaiClient.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message }
@@ -131,14 +139,14 @@ Answer the customer's question: "${message}"`;
     console.error('Chatbot error:', error);
     
     // Handle missing API key
-    if (error.message && error.message.includes('OPENAI_API_KEY')) {
+    if (error.message && error.message.includes('API key')) {
       return res.status(503).json({
         success: false,
         message: 'Chatbot service is not configured. Please contact support.'
       });
     }
     
-    // Handle specific OpenAI errors
+    // Handle specific OpenAI/Groq errors
     if (error.code === 'insufficient_quota') {
       return res.status(503).json({
         success: false,
@@ -146,7 +154,7 @@ Answer the customer's question: "${message}"`;
       });
     }
     
-    if (error.code === 'invalid_api_key') {
+    if (error.code === 'invalid_api_key' || error.code === 'model_not_found') {
       return res.status(500).json({
         success: false,
         message: 'Chatbot configuration error. Please contact support.'
@@ -174,11 +182,11 @@ exports.health = async (req, res) => {
     });
   } catch (error) {
     // Handle missing API key
-    if (error.message && error.message.includes('OPENAI_API_KEY')) {
+    if (error.message && error.message.includes('API key')) {
       return res.status(503).json({
         success: false,
-        message: 'Chatbot service is not configured. Please set OPENAI_API_KEY environment variable.',
-        error: 'Missing API key'
+        message: 'Chatbot service is not configured. Please set GROQ_API_KEY or OPENAI_API_KEY environment variable.',
+        error: 'Missing API key',
       });
     }
     

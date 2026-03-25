@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiPackage, FiTruck, FiCheckCircle, FiClock, FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
+import { FiArrowLeft, FiPackage, FiTruck, FiCheckCircle, FiClock, FiMapPin, FiPhone, FiMail, FiRefreshCw } from 'react-icons/fi';
 import { useAuth } from '../context/useAuth';
 import { api } from '../utils/api.jsx';
 import { formatPrice, formatDate, getStatusColor } from '../utils/helpers.jsx';
 import Image from '../components/Image';
 import { constructImageUrl } from '../utils/imageUtils';
 import Chatbot from '../components/Chatbot';
+import OrderTrackingMap from '../components/OrderTrackingMap';
+import { WAREHOUSE_LOCATION } from '../utils/deliveryCalculation';
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -40,6 +42,13 @@ const OrderTracking = () => {
     }
 
     loadOrderDetails();
+
+    // Poll for updates every 10 seconds for live tracking
+    const intervalId = setInterval(() => {
+      loadOrderDetails();
+    }, 10000);
+
+    return () => clearInterval(intervalId);
   }, [orderId, user]);
 
   const loadOrderDetails = async () => {
@@ -96,6 +105,11 @@ const OrderTracking = () => {
   }
 
   const timelineSteps = getTimelineSteps(order.status);
+  const deliveryCoordinates =
+    order.shippingAddress?.coordinates || order.deliveryLocation?.coordinates || null;
+  const driverLocation = order.driverLocation
+    ? { lat: order.driverLocation.latitude, lng: order.driverLocation.longitude }
+    : null;
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
@@ -125,6 +139,25 @@ const OrderTracking = () => {
         >
           <FiArrowLeft size={20} />
           Back to Orders
+        </button>
+        <button
+          onClick={loadOrderDetails}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--primary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: 'var(--primary)',
+            fontSize: '0.9rem',
+            padding: '0.4rem 0.9rem',
+            borderRadius: '999px',
+            marginLeft: 'auto'
+          }}
+        >
+          <FiRefreshCw size={16} />
+          Refresh Status
         </button>
       </div>
 
@@ -222,6 +255,35 @@ const OrderTracking = () => {
           </p>
         </div>
       </div>
+
+      {/* Live Delivery Map */}
+      {deliveryCoordinates?.latitude && deliveryCoordinates?.longitude && (
+        <div className="card" style={{ marginBottom: '2rem', padding: '2rem' }}>
+          <h2
+            style={{
+              marginTop: 0,
+              marginBottom: '1.5rem',
+              fontSize: '1.5rem',
+              fontWeight: '600',
+            }}
+          >
+            Live Delivery Map
+          </h2>
+          <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            This map simulates the delivery partner travelling from our warehouse to your
+            address based on your current order status.
+          </p>
+          <OrderTrackingMap
+            warehouse={WAREHOUSE_LOCATION}
+            delivery={{
+              lat: deliveryCoordinates.latitude,
+              lng: deliveryCoordinates.longitude,
+            }}
+            status={order.status}
+            driverLocation={driverLocation}
+          />
+        </div>
+      )}
 
       {/* Order Summary */}
       <div className="card" style={{ marginBottom: '2rem', padding: '2rem' }}>

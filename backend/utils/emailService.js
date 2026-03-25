@@ -45,6 +45,70 @@ const createTransporter = () => {
   }
 };
 
+// Send password reset email
+const sendPasswordResetEmail = async (userEmail, userName, resetLink) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || process.env.EMAIL_USER,
+      to: userEmail,
+      subject: 'Reset your password - ACEON Mattress',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="background-color: #f1f5f9; padding: 20px; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+          <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #edf2f7;">
+            <div style="background: linear-gradient(135deg, #36d1c4 0%, #1e3c72 100%); padding: 32px 24px; text-align: center; color: white;">
+              <h1 style="margin: 0; font-size: 24px; letter-spacing: 0.5px;">Password reset request</h1>
+              <p style="opacity: 0.9; margin-top: 8px; font-size: 14px;">A request was made to reset the password for your ACEON account.</p>
+            </div>
+
+            <div style="padding: 28px 24px 32px 24px;">
+              <p style="font-size: 15px; color: #1a202c; margin: 0 0 16px 0;">Hi <strong>${userName || 'there'}</strong>,</p>
+              <p style="font-size: 14px; color: #4a5568; line-height: 1.7; margin: 0 0 20px 0;">
+                We received a request to reset the password for your ACEON account. If you made this request, please click the button below to choose a new password.
+              </p>
+
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${resetLink}" style="display: inline-block; padding: 11px 26px; background: #1e3c72; color: #ffffff; text-decoration: none; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: 0 8px 18px rgba(30,60,114,0.35);">
+                  Reset your password
+                </a>
+              </div>
+
+              <p style="font-size: 13px; color: #718096; line-height: 1.6; margin: 0 0 16px 0;">
+                This link will expire in <strong>1 hour</strong> for your security. If it expires, you can always request a new password reset from the login page.
+              </p>
+
+              <p style="font-size: 13px; color: #718096; line-height: 1.6; margin: 0 0 16px 0;">
+                If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
+              </p>
+
+              <p style="font-size: 12px; color: #a0aec0; line-height: 1.6; margin: 24px 0 0 0;">
+                If the button above does not work, copy and paste this link into your browser:<br />
+                <span style="word-break: break-all; color: #4a5568;">${resetLink}</span>
+              </p>
+            </div>
+
+            <div style="text-align: center; padding: 16px 20px 20px 20px; font-size: 11px; color: #a0aec0; background: #f7fafc; border-top: 1px solid #edf2f7;">
+              <p style="margin: 0 0 4px 0;">© ${new Date().getFullYear()} ACEON Mattress. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent successfully:', result.messageId);
+    return result;
+  } catch (error) {
+    console.error('ERROR in sendPasswordResetEmail:', error.message);
+    console.error('Stack trace:', error.stack);
+    throw error;
+  }
+};
+
 // Send order confirmation email
 const sendOrderConfirmationEmail = async (userEmail, userName, orderDetails) => {
   try {
@@ -201,6 +265,7 @@ const sendOrderStatusUpdateEmail = async (userEmail, userName, orderDetails, new
 };
 
 module.exports = {
+  sendPasswordResetEmail,
   sendOrderConfirmationEmail,
   sendOrderStatusUpdateEmail
 };
