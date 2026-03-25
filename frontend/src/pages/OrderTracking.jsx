@@ -45,23 +45,23 @@ const OrderTracking = () => {
 
     // Poll for updates every 10 seconds for live tracking
     const intervalId = setInterval(() => {
-      loadOrderDetails();
+      loadOrderDetails(true);
     }, 10000);
 
     return () => clearInterval(intervalId);
   }, [orderId, user]);
 
-  const loadOrderDetails = async () => {
+  const loadOrderDetails = async (isBackground = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!isBackground) setLoading(true);
+      if (!isBackground) setError(null);
       const orderData = await api.getOrder(orderId);
       setOrder(orderData);
     } catch (err) {
       console.error('Error loading order:', err);
-      setError(err.message || 'Failed to load order details');
+      if (!isBackground) setError(err.message || 'Failed to load order details');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 

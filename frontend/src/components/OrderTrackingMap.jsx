@@ -25,6 +25,7 @@ L.Icon.Default.mergeOptions({
 const OrderTrackingMap = ({ warehouse, delivery, status, driverLocation }) => {
   const mapRef = useRef(null);
   const driverMarkerRef = useRef(null);
+  const currentProgressRef = useRef(0);
 
   useEffect(() => {
     if (!warehouse || !delivery) return;
@@ -76,8 +77,10 @@ const OrderTrackingMap = ({ warehouse, delivery, status, driverLocation }) => {
   useEffect(() => {
     if (!driverMarkerRef.current || !warehouse || !delivery) return;
 
-    // If we have a live driver location, place marker exactly there
-    if (driverLocation && driverLocation.lat && driverLocation.lng) {
+    // If we have a live driver location that is actively moving, place marker exactly there
+    // If it's identical to the warehouse, it implies it hasn't moved, so fall back to simulation
+    if (driverLocation && driverLocation.lat && driverLocation.lng && 
+       !(driverLocation.lat === warehouse.lat && driverLocation.lng === warehouse.lng)) {
       driverMarkerRef.current.setLatLng([driverLocation.lat, driverLocation.lng]);
       return;
     }
@@ -93,25 +96,26 @@ const OrderTrackingMap = ({ warehouse, delivery, status, driverLocation }) => {
     };
 
     const targetProgress = progressByStatus[status] ?? 0;
-
-    let current = 0;
-    const step = 0.02; // animation smoothness
+    const step = 0.015; // smooth animation step
 
     const intervalId = setInterval(() => {
-      if (current >= targetProgress) {
+      if (Math.abs(currentProgressRef.current - targetProgress) < step) {
+        currentProgressRef.current = targetProgress;
         clearInterval(intervalId);
-        return;
+      } else if (currentProgressRef.current < targetProgress) {
+        currentProgressRef.current += step;
+      } else {
+        currentProgressRef.current -= step;
       }
-      current = Math.min(current + step, targetProgress);
 
-      const lat = warehouse.lat + (delivery.lat - warehouse.lat) * current;
-      const lng = warehouse.lng + (delivery.lng - warehouse.lng) * current;
+      const lat = warehouse.lat + (delivery.lat - warehouse.lat) * currentProgressRef.current;
+      const lng = warehouse.lng + (delivery.lng - warehouse.lng) * currentProgressRef.current;
 
       driverMarkerRef.current.setLatLng([lat, lng]);
-    }, 300);
+    }, 100);
 
     return () => clearInterval(intervalId);
-  }, [status, warehouse, delivery, driverLocation]);
+  }, [status, warehouse.lat, warehouse.lng, delivery.lat, delivery.lng, driverLocation]);
 
   return (
     <div
