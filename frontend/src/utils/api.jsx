@@ -388,7 +388,7 @@ export const api = {
 
       const token = getAuthToken();
       const response = await axios.post(
-        'http://localhost:5000/api/products/upload/images',
+        `${import.meta.env.VITE_API_URL}/api/products/upload/images`,
         formData,
         {
           headers: {

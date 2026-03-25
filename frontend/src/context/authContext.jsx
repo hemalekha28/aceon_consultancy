@@ -221,7 +221,7 @@ export const AuthProvider = ({ children, initialRole }) => {
       const firebaseUser = result.user;
       
       // Send user data to backend for login/registration
-      const response = await fetch('http://localhost:5000/api/auth/google-login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

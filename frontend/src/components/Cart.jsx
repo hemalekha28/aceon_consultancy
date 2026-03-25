@@ -13,7 +13,7 @@ const Cart = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [productStocks, setProductStocks] = useState({});
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
   // Fetch product stocks when cart items change
   useEffect(() => {
