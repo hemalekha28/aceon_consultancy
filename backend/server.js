@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 5000;
 
 // Rest of your server configuration...
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173', 'https://aceon-mattress-frontend.onrender.com'],
   credentials: true
 }));
 
