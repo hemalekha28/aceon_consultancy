@@ -447,4 +447,115 @@ router.post('/', protect, [
   }
 });
 
+// ==================
+// @desc    Generate & Send Delivery OTP to customer
+// @route   POST /api/orders/:id/generate-otp
+// @access  Private/Admin
+// ==================
+router.post('/:id/generate-otp', protect, admin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.status === 'delivered' || order.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: `Cannot generate OTP for a ${order.status} order` });
+    }
+
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+
+    order.deliveryOTP = otp;
+    order.deliveryOTPExpiry = expiry;
+    await order.save();
+
+    const userName = order.user?.name || 'Customer';
+    const userEmail = order.user?.email;
+    const userPhone = order.user?.phone || req.body.phone;
+
+    // Send Email OTP
+    if (userEmail) {
+      try {
+        const { sendDeliveryOTPEmail } = require('../utils/emailService');
+        await sendDeliveryOTPEmail(userEmail, userName, otp, order._id);
+        console.log(`Delivery OTP email sent to ${userEmail}`);
+      } catch (emailErr) {
+        console.error('Failed to send OTP email:', emailErr.message);
+      }
+    }
+
+    // Send SMS OTP (non-blocking if fails)
+    if (userPhone) {
+      try {
+        const { sendDeliveryOTPSMS } = require('../utils/smsService');
+        await sendDeliveryOTPSMS(userPhone, otp, order._id);
+      } catch (smsErr) {
+        console.error('Failed to send OTP SMS:', smsErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Delivery OTP sent to customer${userEmail ? ' email' : ''}${userPhone ? ' & phone' : ''}. OTP expires in 2 hours.`
+    });
+  } catch (error) {
+    console.error('Error generating delivery OTP:', error);
+    res.status(500).json({ success: false, message: 'Error generating delivery OTP' });
+  }
+});
+
+// ==================
+// @desc    Verify Delivery OTP & mark order delivered
+// @route   POST /api/orders/:id/verify-otp
+// @access  Private/Admin
+// ==================
+router.post('/:id/verify-otp', protect, admin, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ success: false, message: 'OTP is required' });
+    }
+
+    const order = await Order.findById(req.params.id).populate('user', 'name email');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.status === 'delivered') {
+      return res.status(400).json({ success: false, message: 'Order is already delivered' });
+    }
+
+    if (!order.deliveryOTP || !order.deliveryOTPExpiry) {
+      return res.status(400).json({ success: false, message: 'No OTP has been generated for this order. Send OTP first.' });
+    }
+
+    if (new Date() > order.deliveryOTPExpiry) {
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please generate a new one.' });
+    }
+
+    if (order.deliveryOTP !== otp.toString().trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
+    }
+
+    // OTP is valid — mark as delivered and clear OTP
+    order.status = 'delivered';
+    order.deliveryOTP = undefined;
+    order.deliveryOTPExpiry = undefined;
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'OTP verified! Order marked as delivered successfully.',
+      data: { order }
+    });
+  } catch (error) {
+    console.error('Error verifying delivery OTP:', error);
+    res.status(500).json({ success: false, message: 'Error verifying OTP' });
+  }
+});
+
 module.exports = router;

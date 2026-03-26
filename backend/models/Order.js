@@ -130,7 +130,9 @@ const orderSchema = new mongoose.Schema({
   coupon: {
     code: { type: String, uppercase: true },
     discountAmount: { type: Number, default: 0 }
-  }
+  },
+  deliveryOTP: { type: String },
+  deliveryOTPExpiry: { type: Date }
 }, {
   timestamps: true
 });

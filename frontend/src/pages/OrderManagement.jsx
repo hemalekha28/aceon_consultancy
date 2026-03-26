@@ -15,6 +15,9 @@ const OrderManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -101,6 +104,54 @@ const OrderManagement = () => {
 
   const handleRefresh = () => {
     loadOrders(true);
+  };
+
+  const handleSendOTP = async (orderId) => {
+    try {
+      setOtpLoading(true);
+      setError(null);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/generate-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      setOtpSent(true);
+      setSuccess(data.message);
+      setTimeout(() => setSuccess(null), 6000);
+    } catch (err) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (orderId) => {
+    if (!otpInput || otpInput.length !== 6) {
+      setError('Please enter the 6-digit OTP provided by the customer.');
+      return;
+    }
+    try {
+      setOtpLoading(true);
+      setError(null);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ otp: otpInput })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      setShowModal(false);
+      setOtpInput('');
+      setOtpSent(false);
+      setSuccess('✅ OTP Verified! Order marked as Delivered.');
+      setTimeout(() => setSuccess(null), 6000);
+      await loadOrders(true);
+    } catch (err) {
+      setError(err.message || 'OTP verification failed');
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   const getStatusOptions = (currentStatus) => {
@@ -501,28 +552,74 @@ const OrderManagement = () => {
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button onClick={() => setShowModal(false)} className="btn btn-secondary">
-                Close
-              </button>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <select
-                  className="form-select"
-                  defaultValue={selectedOrder.status}
-                  onChange={(e) => {
-                    const newStatus = e.target.value;
-                    if (newStatus && newStatus !== selectedOrder.status) {
-                      handleStatusUpdate(selectedOrder.id || selectedOrder._id, newStatus);
-                      setShowModal(false);
-                    }
-                  }}
-                  style={{ padding: '0.5rem', borderRadius: '6px' }}
-                >
-                  <option value={selectedOrder.status}>Current: {selectedOrder.status}</option>
-                  {getStatusOptions(selectedOrder.status).map(status => (
-                    <option key={status} value={status}>Change to: {status}</option>
-                  ))}
-                </select>
+            <div className="modal-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1rem' }}>
+
+              {/* OTP Delivery Verification Section */}
+              {selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && (
+                <div style={{ background: '#f0f9ff', border: '1px solid #bde0ff', borderRadius: '10px', padding: '1rem' }}>
+                  <p style={{ margin: '0 0 0.75rem 0', fontWeight: '600', fontSize: '0.95rem', color: '#1e3c72' }}>
+                    🔐 Delivery OTP Verification
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => handleSendOTP(selectedOrder.id || selectedOrder._id)}
+                      disabled={otpLoading}
+                      className="btn btn-sm btn-primary"
+                    >
+                      {otpLoading ? 'Sending...' : (otpSent ? '📨 Re-send OTP' : '📨 Send OTP to Customer')}
+                    </button>
+                    {otpSent && (
+                      <>
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="Enter 6-digit OTP"
+                          value={otpInput}
+                          onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                          style={{ border: '1px solid #93c5fd', borderRadius: '6px', padding: '0.3rem 0.6rem', width: '140px', fontSize: '1rem', letterSpacing: '4px', textAlign: 'center' }}
+                        />
+                        <button
+                          onClick={() => handleVerifyOTP(selectedOrder.id || selectedOrder._id)}
+                          disabled={otpLoading || otpInput.length !== 6}
+                          className="btn btn-sm btn-success"
+                          style={{ background: '#16a34a', color: 'white', border: 'none' }}
+                        >
+                          {otpLoading ? 'Verifying...' : '✔ Verify & Mark Delivered'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {!otpSent && (
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#4a5568' }}>
+                      Click "Send OTP" to dispatch a 6-digit code to the customer's email & phone. Enter the code the customer shows you to confirm delivery.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <button onClick={() => { setShowModal(false); setOtpInput(''); setOtpSent(false); }} className="btn btn-secondary">
+                  Close
+                </button>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <select
+                    className="form-select"
+                    defaultValue={selectedOrder.status}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      if (newStatus && newStatus !== selectedOrder.status) {
+                        handleStatusUpdate(selectedOrder.id || selectedOrder._id, newStatus);
+                        setShowModal(false);
+                      }
+                    }}
+                    style={{ padding: '0.5rem', borderRadius: '6px' }}
+                  >
+                    <option value={selectedOrder.status}>Current: {selectedOrder.status}</option>
+                    {getStatusOptions(selectedOrder.status).map(status => (
+                      <option key={status} value={status}>Change to: {status}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>

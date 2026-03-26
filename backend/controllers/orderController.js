@@ -1,7 +1,8 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
-const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } = require("../utils/emailService");
+const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail, sendDeliveryOTPEmail } = require("../utils/emailService");
+const { sendDeliveryOTPSMS } = require("../utils/smsService");
 const { calculateTotalTax } = require("../utils/taxCalculation");
 
 exports.createOrder = async (req, res) => {
@@ -35,7 +36,8 @@ exports.createOrder = async (req, res) => {
         price: product.price,
         image: product.image,
         quantity: item.quantity
-      });
+      };
+      orderProducts.push(itemObject);
 
       calculatedTotal += product.price * item.quantity;
 

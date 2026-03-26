@@ -264,8 +264,64 @@ const sendOrderStatusUpdateEmail = async (userEmail, userName, orderDetails, new
   }
 };
 
+// Send delivery OTP email
+const sendDeliveryOTPEmail = async (userEmail, userName, otp, orderId) => {
+  try {
+    const transporter = createTransporter();
+    const shortOrderId = orderId.toString().slice(-8);
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || process.env.EMAIL_USER,
+      to: userEmail,
+      subject: `🔐 Delivery OTP for Order #${shortOrderId} - ACEON Mattress`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="background-color: #f1f5f9; padding: 20px; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+          <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #edf2f7;">
+            <div style="background: linear-gradient(135deg, #1e3c72 0%, #36d1c4 100%); padding: 36px 24px; text-align: center; color: white;">
+              <h1 style="margin: 0; font-size: 26px; letter-spacing: 0.5px;">🛵 Your Delivery is Here!</h1>
+              <p style="opacity: 0.9; margin-top: 10px; font-size: 15px;">Order #${shortOrderId} is at your doorstep.</p>
+            </div>
+
+            <div style="padding: 36px 28px;">
+              <p style="font-size: 16px; color: #1a202c; margin: 0 0 12px 0;">Hi <strong>${userName || 'there'}</strong>,</p>
+              <p style="font-size: 14px; color: #4a5568; line-height: 1.7; margin: 0 0 28px 0;">
+                Your ACEON Mattress delivery partner has arrived. Please share the OTP below <strong>only with the delivery person</strong> to confirm delivery. Do not share it with anyone else.
+              </p>
+
+              <div style="background: #f0f9ff; border: 2px dashed #36d1c4; border-radius: 14px; padding: 28px; text-align: center; margin-bottom: 28px;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #718096; text-transform: uppercase; letter-spacing: 1px;">Your Delivery OTP</p>
+                <p style="margin: 0; font-size: 48px; font-weight: 800; letter-spacing: 12px; color: #1e3c72;">${otp}</p>
+                <p style="margin: 12px 0 0 0; font-size: 12px; color: #a0aec0;">Valid for 2 hours</p>
+              </div>
+
+              <p style="font-size: 13px; color: #e53e3e; background: #fff5f5; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #e53e3e; margin: 0;">
+                ⚠️ <strong>Never share this OTP</strong> over phone or chat. ACEON staff will never ask for your OTP.
+              </p>
+            </div>
+
+            <div style="text-align: center; padding: 16px 20px 20px 20px; font-size: 11px; color: #a0aec0; background: #f7fafc; border-top: 1px solid #edf2f7;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} ACEON Mattress. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Delivery OTP email sent successfully:', result.messageId);
+    return result;
+  } catch (error) {
+    console.error('ERROR in sendDeliveryOTPEmail:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendOrderConfirmationEmail,
-  sendOrderStatusUpdateEmail
+  sendOrderStatusUpdateEmail,
+  sendDeliveryOTPEmail
 };
